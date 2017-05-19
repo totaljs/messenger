@@ -1,0 +1,47 @@
+<div data-jc="form" data-title="@(Edit channels)" data-jc-path="common.form" data-if="value === 'formblacklist'" data-width="400px" data-jc-id="formblacklist" class="hidden" data-enter="true">
+	<div class="padding blacklist">
+		<div data-jc="repeater" data-jc-path="current.channels">
+			<script type="text/html">
+				<div class="item{{ if visible }} item-visible{{ fi }}" data-id="{{ id }}"><i class="fa"></i>{{ name }}</div>
+			</script>
+		</div>
+	</div>
+	<hr class="nmt nmb" />
+	<div class="padding">
+		<button class="button" name="submit">@(SAVE)</button>
+	</div>
+</div>
+
+<script>
+
+	function formblacklist_reload() {
+		SET('formblacklist', {}, true);
+	}
+
+	ON('#formblacklist', function(component) {
+		component.submit = function() {
+
+			var blacklist = [];
+
+			$('.blacklist').find('.item').each(function() {
+				var el = $(this);
+				var id = el.attr('data-id');
+				var tmp = current.channels.findItem('id', id);
+				tmp.visible = el.hasClass('item-visible');
+				!tmp.visible && blacklist.push(id);
+			});
+
+			SETTER('loading', 'show');
+			AJAX('POST /api/blacklist/', blacklist, function() {
+				UPDATE('current.channels');
+				SET('common.form', '');
+				SETTER('loading', 'hide', 1000);
+			});
+		};
+	});
+
+	$('.blacklist').on('click', '.item', function() {
+		$(this).toggleClass('item-visible');
+	});
+
+</script>

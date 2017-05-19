@@ -1,0 +1,44 @@
+<div data-jc="form" data-title="@(Edit channel)" data-jc-path="common.form" data-if="value === 'formchannel'" data-width="400px" data-jc-id="formchannel" class="hidden" data-enter="true">
+	<div class="padding">
+		<div data-jc="textbox" data-jc-path="formchannel.name" data-required="true" data-maxlength="20" data-icon="fa-hashtag" data-placeholder="@(e.g. Generals)" class="m">@(Channel name)</div>
+		<div data-jc="textbox" data-jc-path="formchannel.description" data-required="true" data-maxlength="200" data-placeholder="@(Channel description)">@(Description)</div>
+		<div data-jc="error" data-jc-path="formchannel.response"></div>
+	</div>
+	<hr class="nmt nmb" />
+	<div class="padding">
+		<div data-jc="error" data-jc-path="formchannel.response"></div>
+		<div data-jc="validation" data-jc-path="formchannel">
+			<button class="button" name="submit" disabled="disabled">@(SUBMIT)</button>
+			<div data-b="formchannel.id" data-b-visible="n => n" class="hidden mt5"><a href="javascript:void(0)" class="fs12 red exec" data-exec="formchannel_remove"><i class="fa fa-times-circle mr5"></i>@(Remove channel)</a></div>
+		</div>
+	</div>
+</div>
+
+<script>
+	function formchannel_reload() {
+		SET('formchannel', {}, true);
+	}
+
+	function formchannel_remove() {
+		FIND('confirm').confirm('@(Are you sure you want to remove selected channel?)', ['@(Yes)', '@(Cancel)'], function(index) {
+			if (index)
+				return;
+			AJAX('DELETE /api/channels/{0}/'.format(formchannel.id), NOOP);
+			REDIRECT('/');
+			SET('common.form', '');
+		});
+	}
+
+	ON('#formchannel', function(component) {
+		component.submit = function() {
+			if (BLOCKED('formchannel', 2000) || !jC.valid('formchannel.*'))
+				return;
+			RESET('formchannel.*');
+			AJAX('POST /api/channels/', formchannel, function() {
+				SETTER('message', 'success', '@(The channel has been created successfully.)');
+				SET('common.form', '');
+			});
+		};
+	});
+
+</script>

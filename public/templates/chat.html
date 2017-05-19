@@ -1,0 +1,390 @@
+<div data-b="common.search" data-b-visible="n => n" class="hidden">
+	<div class="padding">
+		<h3><i class="fa fa-search mr5"></i>@(Search results)</h3>
+		<div data-jc="repeater" data-jc-path="chat.search" class="chat" id="chatsearchresult">
+			<script type="text/html">
+				{{ if user }}
+				<figure class="chat-message{{ if !read }} chat-unread{{ fi }}{{ if user.me }} me{{ fi }}">
+					<div class="chat-picture">
+						<a href="{{ if user.me }}javascript:void(0){{ else }}/users/{{ user.linker }}/{{ fi }}" class="jrouting"><img src="/photos/{{ user.picture }}.jpg" alt="{{ user.name }}" class="img-responsive" border="0" /></a>
+					</div>
+					<div class="chat-body">
+						<div class="chat-user"><i class="fa useronline fa-circle{{ if user.online }} online{{ fi }}" data-id="{{ user.id }}"></i><a href="{{ if user.me }}javascript:void(0){{ else }}/users/{{ user.linker }}/{{ fi }}" class="jrouting"><b>{{ user.name }}</b></a> <span class="datetime" data-value="{{ datecreated }}">{{ datecreated | time }}</span></div>
+						<div class="chat-position">{{ if user.datelogged && !user.online }}<span class="lastonline hidden-xs"><i class="fa fa-clock-o"></i>@(Last logged:) {{ user.datelogged | time }}</span>{{ fi }}<b>{{ user.department }}</b> / {{ user.position }}{{ if user.status }}<span class="status"><i class="fa fa-user-circle-o"></i>{{ user.status }}</span>{{ fi }}</div>
+						<div class="markdown">{{ body | markdown }}</div>
+					</div>
+				</figure>
+				{{ fi }}
+			</script>
+		</div>
+		<div data-b="chat.search" data-b-visible="n => n && !n.length" class="padding">
+			<div class="row">
+				<div class="col-md-8 col-md-offset-2 center">
+					<hr />
+					<div><i class="fa fa-search fa-4x"></i></div>
+					<p>@(<b>No messages</b> found in database.)</p>
+					<hr />
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div data-b="common.search" data-b-visible="n => !n">
+	<div data-jc="chat" data-previous="@(Previous page: {0})">
+		<script type="text/html">
+			<figure data-id="{{ id }}" class="chat-message{{ if !read }} chat-unread{{ fi }}{{ if user.me }} me{{ fi }}" data-linker="{{ user.linker }}">
+				<div class="chat-picture center">
+					<a href="{{ if user.me }}javascript:void(0){{ else }}/users/{{ user.linker }}/{{ fi }}" class="jrouting"><img src="/photos/{{ user.picture }}.jpg" alt="{{ user.name }}" class="img-responsive" border="0" /></a>
+					<div class="chat-favorite" title="@(Add to favorites)"><i class="fa fa-heart{{ if !favorited }}-o{{ fi }}"></i></div>
+				</div>
+				<div class="chat-body">
+					<div class="chat-user"><i class="fa useronline fa-circle{{ if user.online }} online{{ fi }}" data-id="{{ user.id }}"></i><a href="{{ if user.me }}javascript:void(0){{ else }}/users/{{ user.linker }}/{{ fi }}" class="jrouting"><b>{{ user.name }}</b></a><a href="javascript:void(0)" class="chat-user-linker userlinker" data-linker="{{ user.linker }}">@{{ user.linker }}</a>{{ if mobile }}<span class="fa fa-mobile"></span>{{ fi }}<span class="datetime" title="{{ datecreated | format('@(yyyy-MM-dd HH:mm)') }}" data-value="{{ datecreated }}">{{ datecreated | time }}</span></div>
+					<div class="chat-position">{{ if user.datelogged && !user.online }}<span class="lastonline hidden-xs"><i class="fa fa-clock-o"></i>@(Last logged:) {{ user.datelogged | time }}</span>{{ fi }}{{ if !read }}<span class="datetime unread" data-value="{{ datecreated }}">{{ datecreated | time }}</span>{{ fi }}<b>{{ user.department }}</b> / {{ user.position }}{{ if user.status }}<span class="status"><i class="fa fa-user-circle-o"></i>{{ user.status }}</span>{{ fi }}</div>
+					<div class="markdown">{{ body | markdown }}</div>
+				</div>
+			</figure>
+		</script>
+		<script type="text/html">
+			<!-- likes -->
+			<div class="chat-likes-like{{ if unread }} chat-unread{{ fi }}{{ if user.me }} me{{ fi }}">
+				<div><i class="fa fa-thumbs-up fa-2x"></i></div>
+				<a href="{{ if user.me }}javascript:void(0){{ else }}/users/{{ user.linker }}/{{ fi }}" class="jrouting"><img src="/photos/{{ user.picture }}.jpg" alt="{{ user.name }}" border="0" /></a>
+				<div>
+					<div class="username"><i class="fa useronline fa-circle{{ if user.online }} online{{ fi }}" data-id="{{ user.id }}"></i><a href="{{ if user.me }}javascript:void(0){{ else }}/users/{{ user.linker }}/{{ fi }}" class="jrouting">{{ user.name }}</a></div>
+					<div class="position" title="{{ user.department}}">{{ user.position }}</div>
+					<div class="datetime" title="{{ datecreated | format('@(yyyy-MM-dd HH:mm)') }}" data-value="{{ datecreated }}">{{ datecreated | time }}</div>
+				</div>
+			</div>
+		</script>
+	</div>
+</div>
+
+<div data-b="chat.empty" data-b-visible="n => n">
+	<br /><br />
+	<br /><br />
+	<div class="center padding">
+		<i class="fa fa-commenting-o green fa-5x"></i>
+		<div class="mt10"><b>@(No conversation yet.)</b><br />@(Just write a new message on this page.)</div>
+	</div>
+</div>
+
+<script>
+	var MSG_ROUTE = {};
+	var CHATFILTER = { max: WIDTH() === 'xs' ? 15 : 25 };
+	var CHATSEARCH = { max: 35, q: '', page: 1 };
+	var chat = { empty: true, lastmessage: null };
+
+	function chat_reload(page) {
+		MSG_ROUTE.type = current.route.type;
+		MSG_ROUTE.id = current.route.item.id;
+		CHATFILTER.page = page || 1;
+		SETTER('loading', 'show');
+		AJAX('GET /api/messages/{0}/'.format((MSG_ROUTE.type === 'channel' ? 'channel' : 'user') + MSG_ROUTE.id), CHATFILTER, function(response, err) {
+
+			if (err)
+				return;
+
+			var items = response.items;
+
+			SET('common.stats', response.stats);
+
+			// We have to reverse array because all messages are from newest to older
+			items.reverse();
+
+			if (CHATFILTER.page === 1) {
+				FIND('chat', function() {
+					this.clean();
+					this.insert(items);
+				});
+				SET('chat.empty', items.length === 0);
+			} else
+				SETTER('chat', 'prepend', items);
+
+			SETTER('websocket', 'send', MSG_ROUTE);
+			SETTER('loading', 'hide', 500);
+			!isMOBILE && SETTER('codemirror', 'focus');
+		});
+
+		$('#messagebox').removeClass('hidden');
+		EMIT('resize');
+	}
+
+	WATCH('common.search', function(path, value) {
+
+		if (common.page !== 'chat')
+			return;
+
+		if (!value) {
+			chat.search !== EMPTYARRAY && SET('chat.search', EMPTYARRAY);
+			return;
+		}
+
+		CHATSEARCH.q = value;
+
+		SETTER('loading', 'show');
+		AJAX('GET /api/messages/{0}/'.format((MSG_ROUTE.type === 'channel' ? 'channel' : 'user') + MSG_ROUTE.id), CHATSEARCH, function(response) {
+			SETTER('loading', 'hide', 1000);
+
+			var items = response.items;
+
+			items.forEach(function(item) {
+				item.user = current.users.findItem('id', item.iduser);
+			});
+
+			SET('chat.search', items);
+			setTimeout(function() {
+				var el = $('#chatsearchresult');
+				marked_video(el);
+				marked_iframe(el);
+				highlight(el);
+			}, 500);
+		});
+	});
+
+	COMPONENT('chat', function() {
+
+		var self = this;
+		var history = [];
+
+		var Tlike;
+		var Tmessage;
+
+		self.next = false;
+		self.blind();
+		self.readonly();
+		self.singleton();
+
+		self.clean = function() {
+			chat.lastmessage = null;
+			self.empty();
+			history = [];
+		};
+
+		self.debug = function() {
+			return { Tlike: Tlike, Tmessage: Tmessage, history: history };
+		};
+
+		self.prepend = function(value) {
+
+			var tmp = [];
+			var builder = [];
+			var last = user.lastmessages[MSG_ROUTE.id];
+
+			value.forEach(function(item) {
+
+				item.me = user.id === item.iduser;
+				item.user = current.users.findItem('id', item.iduser);
+
+				if (!item.user)
+					return;
+
+				item.favorited = item.favorite = common.favorites[item.id];
+				item.read = last ? newest(last, item.id) : false;
+
+				if (item.body !== ':thumbs-up:') {
+					tmp.length && self.insert_likes(tmp, builder);
+					tmp = [];
+					builder.push(Tmessage(item));
+				} else
+					tmp.push(item);
+
+				item.me && (chat.lastmessage = item);
+				history.push(item);
+			});
+
+			var el;
+
+			tmp.length && self.insert_likes(tmp, builder);
+
+			if (builder.length) {
+				builder.push('<div class="previouspage"><div>{0}</div></div>'.format(self.attr('data-previous').format(CHATFILTER.page)));
+				el = self.element.prepend(builder.join(''));
+				marked_video(el);
+				marked_iframe(el);
+				highlight(el);
+			}
+
+			el = $('#content');
+			var prev = el.find('.previouspage');
+			if (!prev.length) {
+				self.next = false;
+				return self;
+			}
+
+			el.scrollTop(prev.eq(0).offset().top - 100);
+			self.next = value.length >= CHATFILTER.max;
+			return self;
+		};
+
+		self.insert_likes = function(arr, builder) {
+			builder.push('<figure class="chat-likes{0}">'.format(arr.length === 1 ? ' chat-likes-one' : ''));
+			arr.forEach(function(item) {
+				builder.push(Tlike(item));
+			});
+			builder.push('</figure>');
+			return self;
+		};
+
+		self.insert = function(value, ws) {
+
+			if (!(value instanceof Array))
+				value = [value];
+			else
+				self.next = value.length >= CHATFILTER.max;
+
+			var builder = [];
+			var last = user.lastmessages[MSG_ROUTE.id];
+			var tmp = [];
+
+			value.forEach(function(item) {
+				item.me = user.id === item.iduser;
+				item.user = current.users.findItem('id', item.iduser);
+
+				if (!item.user)
+					return;
+
+				item.me && (chat.lastmessage = item);
+				item.favorited = item.favorite = common.favorites[item.id];
+				item.read = last ? newest(last, item.id) : false;
+
+				if (item.body !== ':thumbs-up:') {
+					tmp.length && self.insert_likes(tmp, builder);
+					tmp = [];
+					builder.push(Tmessage(item));
+				} else
+					tmp.push(item);
+
+				history.push(item);
+			});
+
+			!ws && tmp.length && self.insert_likes(tmp, builder);
+			value.length && (user.lastmessages[MSG_ROUTE.id] = value.last().id);
+			builder.length && chat.empty && SET('chat.empty', false);
+
+			var el = null;
+
+			// only one message via WS
+			if (ws && tmp.length) {
+				// for animation
+				tmp[0].unread = true;
+				el = self.find('figure').last();
+				if (el.hasClass('chat-likes')) {
+					el.append(Tlike(tmp[0]));
+					el.removeClass('chat-likes-one');
+				} else {
+					self.insert_likes(tmp, builder);
+					el = null;
+				}
+			}
+
+			if (!el) {
+				el = self.append(builder.join(''));
+				marked_video(el);
+				marked_iframe(el);
+				highlight(el);
+			}
+
+			scrollBottom();
+			setTimeout2(self.id, scrollBottom, 500);
+			return self;
+		};
+
+		self.replace = function(item) {
+			item.me = user.id === item.iduser;
+			item.user = current.users.findItem('id', item.iduser);
+			item.me && (chat.lastmessage = item);
+			self.find('[data-id="{0}"]'.format(item.id)).replaceWith(Tmessage(item));
+			highlight(self.element);
+			marked_video(self.element);
+			marked_iframe(self.element);
+			return self;
+		};
+
+		self.make = function() {
+			self.classes('chat');
+			self.find('script').each(function(index) {
+				if (index)
+					Tlike = Tangular.compile(this.innerHTML);
+				else
+					Tmessage = Tangular.compile(this.innerHTML);
+			}).remove();
+
+			var content = $('#content');
+			content.on('scroll', function() {
+				if (!self.next || common.page !== 'chat' || common.search)
+					return;
+				setTimeout2('contentscroll', function() {
+					content.scrollTop() === 0 && chat_reload(CHATFILTER.page + 1);
+				}, 200);
+			});
+
+			self.element.on('click', '.chat-favorite', function() {
+				var el = $(this);
+				var parent = el.closest('figure');
+				var message = history.findItem('id', parent.attr('data-id'));
+				if (!message)
+					return;
+				message.favorite = !message.favorite;
+				el.find('.fa').toggleClass('fa-heart', message.favorite).toggleClass('fa-heart-o', !message.favorite);
+				setTimeout2('favorite' + message.id, function() {
+					if (message.favorite) {
+						message.favorited = true;
+						var msg = CLONE(message);
+						msg.user = undefined;
+						msg.favorite = undefined;
+						msg.favorited = undefined;
+						msg.idowner = undefined;
+						common.favorites[msg.id] = true;
+						AJAX('POST /api/favorites/', msg, NOOP);
+					} else if (message.favorited) {
+						message.favorited = false;
+						delete common.favorites[message.id];
+						AJAX('DELETE /api/favorites/{0}/'.format(message.id), NOOP);
+					}
+					UPDATE('common.favorites');
+				}, 1000);
+			});
+		};
+	});
+
+	function chat_mute() {
+		SETTER('websocket', 'send', { type: 'mute' });
+	}
+
+	function chat_files() {
+		common.page === 'chat' && SET('common.form', 'files');
+	}
+
+	function chat_export() {
+		SETTER('loading', 'show');
+		AJAX('GET /api/messages/{0}/'.format((MSG_ROUTE.type === 'channel' ? 'channel' : 'user') + MSG_ROUTE.id), { max: 100 }, function(response) {
+
+			var divider = '---------------------------------------------------------------';
+			var builder = [];
+
+			builder.push('[{0}: @(last 100 messages)]'.format(document.title));
+			builder.push('[@(Created): {0}]'.format(new Date().format('yyyy-MM-dd HH:mm:ss')));
+			builder.push('[@(URL): {0}]'.format(location.href));
+			builder.push('');
+			builder.push(divider);
+
+			response = response.items;
+			response.reverse();
+
+			response.forEach(function(item) {
+				var u = current.users.findItem('id', item.iduser);
+				builder.push('DATETIME: {0}, USERNAME: {1}'.format(item.datecreated.format('yyyy-MM-dd HH:mm:ss'), u ? u.name : '@(unknown user)'));
+				builder.push('');
+				builder.push(item.body);
+				builder.push('');
+				builder.push(divider);
+			});
+
+			SETTER('loading', 'hide', 1000);
+			var name = (MSG_ROUTE.type === 'channel' ? current.channels : current.users).findItem('id', MSG_ROUTE.id).linker;
+			saveAs(new Blob([builder.join('\n')], { type: 'text/plain;charset=utf-8' }), 'conversation-{0}.txt'.format(name));
+		});
+	}
+
+</script>

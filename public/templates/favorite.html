@@ -1,0 +1,68 @@
+<div data-jc="repeater" data-jc-path="favorites.items" class="chat favorites">
+	<script type="text/html">
+		<figure data-id="{{ id }}"{{ if user.me }} class="me"{{ fi }}>
+			<div class="chat-picture center">
+				<a href="{{ if user.me }}javascript:void(0){{ else }}/users/{{ user.linker }}/{{ fi }}" class="jrouting"><img src="/photos/{{ user.picture }}.jpg" alt="{{ user.name }}" class="img-responsive" border="0" /></a>
+				<div class="chat-favorite exec" data-exec="favorites_remove" title="@(Add to favorites)"><i class="fa fa-heart{{ if !favorited }}-o{{ fi }}"></i></div>
+			</div>
+			<div class="chat-body">
+				<div class="chat-user"><i class="fa useronline fa-circle{{ if user.online }} online{{ fi }}" data-id="{{ user.id }}"></i><a href="{{ if user.me }}javascript:void(0){{ else }}/users/{{ user.linker }}/{{ fi }}" class="jrouting"><b>{{ user.name }}</b></a><a href="javascript:void(0)" class="chat-user-linker userlinker" data-linker="{{ user.linker }}">@{{ user.linker }}</a>{{ if edited }}<span class="fa fa-pencil" title="@(Edited)"></span>{{ fi }}{{ if mobile }}<span class="fa fa-mobile"></span>{{ fi }}<span class="datetime" title="{{ datecreated | format('@(yyyy-MM-dd HH:mm)') }}" data-value="{{ datecreated }}">{{ datecreated | time }}</span></div>
+				<div class="chat-position">{{ if user.datelogged && !user.online }}<span class="lastonline hidden-xs"><i class="fa fa-clock-o"></i>@(Last logged:) {{ user.datelogged | time }}</span>{{ fi }}{{ if !read }}<span class="datetime unread" data-value="{{ datecreated }}">{{ datecreated | time }}</span>{{ fi }}<b>{{ user.department }}</b> / {{ user.position }}{{ if user.status }}<span class="status"><i class="fa fa-user-circle-o"></i>{{ user.status }}</span>{{ fi }}</div>
+				<div class="markdown">{{ body | markdown }}</div>
+			</div>
+		</figure>
+	</script>
+</div>
+
+<div data-b="favorites.items" data-b-visible="n => !n || !n.length">
+	<br /><br />
+	<br /><br />
+	<div class="center padding">
+		<i class="fa fa-heart-o red fa-5x"></i>
+		<div class="mt10"><b>@(No favorited messages.)</b><br />@(You can add selected messages to favorites, just click to <i class="fa fa-heart red"></i> icon.)</div>
+	</div>
+</div>
+
+<br />
+
+<script>
+
+	var favorites = {};
+
+	function favorites_reload() {
+		SET('current.title', '@(Favorites)');
+		SET('current.descripriton', '@(All stored favorites messages)');
+		$('#messagebox').addClass('hidden');
+		EMIT('resize');
+		SET('common.stats', null);
+
+		WAIT(function() {
+			return current.users !== EMPTYARRAY;
+		}, function() {
+			AJAX('GET /api/favorites/', function(response) {
+				common.favorites = {};
+				response.forEach(function(item) {
+					item.user = current.users.findItem('id', item.iduser);
+					item.favorited = true;
+					common.favorites[item.id] = true;
+				});
+				SET('favorites.items', response);
+				var el = $('.favorites');
+				marked_video(el);
+				marked_iframe(el);
+				highlight(el);
+				UPDATE('common.favorites');
+			});
+		});
+	}
+
+	function favorites_remove(el) {
+		var parent = el.closest('figure');
+		var id = parent.attr('data-id');
+		delete common.favorites[id];
+		REWRITE('favorites.items', favorites.items.remove('id', id));
+		AJAX('DELETE /api/favorites/{0}/'.format(id), NOOP);
+		parent.remove();
+	}
+
+</script>

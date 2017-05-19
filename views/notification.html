@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Notification</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width" />
+	<meta name="format-detection" content="telephone=no" />
+	<meta name="format-detection" content="date=no" />
+	<meta name="format-detection" content="address=no" />
+	<meta name="format-detection" content="email=no" />
+	<style type="text/css">
+		* { font-family: "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif; margin:0; padding:0; }
+		body { -webkit-font-smoothing: antialiased; -webkit-text-size-adjust:none; height: 100%; background-color: white; }
+	</style>
+</head>
+<body style="margin:0;padding:0">
+	<div style="background-color:#F0F0F0;padding:20px;font-family:Arial;font-size:14px;margin:0">
+		<table align="center" style="margin:0 auto;max-width:600px;font-size:14px;width:100%">
+			<tr>
+				<td>
+					<div style="margin:10px 0 0;font-size:30px;"><b>@{F.config.name}:</b> @(Unread messages)</div>
+					<div style="margin:0 0 15px 0;color:#303030;font-size:18px">@{model.name}</div>
+					<div style="padding:30px;background-color:white;border-radius:4px;color:#505050;line-height:18px">
+						@{if model.channels.length}
+							<div style="font-size:18px;font-weight:bold;margin-bottom:10px;color:black">@(Channels)</div>
+							@{foreach m in model.channels}
+								<div style="border-bottom:1px solid #E0E0E0;padding:5px 0">
+									<div style="position:relative;display:inline-block;width:120px;border-right:1px solid #E0E0E0;margin-right:10px;">@(Unread:) <b>@{m.count}x</b></div>
+									<a href="@{config.url}/channels/@{m.item.linker}/">#@{m.item.name}</a>
+								</div>
+							@{end}
+							<br />
+							<br />
+						@{fi}
+						@{if model.users.length}
+							<div style="font-size:18px;font-weight:bold;margin-bottom:10px;color:black">@(Users)</div>
+							@{foreach m in model.users}
+								<div style="border-bottom:1px solid #E0E0E0;padding:5px 0">
+									<div style="position:relative;display:inline-block;width:120px;border-right:1px solid #E0E0E0;margin-right:10px;">@(Unread:) <b>@{m.count}x</b></div>
+									<a href="@{config.url}/users/@{m.item.linker}/">@{m.item.name}</a>
+								</div>
+							@{end}
+							<br />
+							<br />
+						@{fi}
+						<div style="font-size:12px;color:gray;text-align:center;">@(You can disable notifications in your account,<br />just click on the link:) <a href="@{config.url}/settings/">@(Account settings)</a>.</div>
+					</div>
+					<div style="text-align:center;font-size:11px;margin:15px 0 0;color:gray">&copy; 2017 @{config.name}</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>

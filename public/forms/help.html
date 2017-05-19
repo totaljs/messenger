@@ -1,0 +1,105 @@
+<div data-jc="form" data-title="@(Editor's help)" data-jc-path="common.form" data-if="value === 'help'" data-width="600px" class="hidden">
+	<div class="padding npb">
+		<table class="table vmiddle">
+			<tbody>
+				<tr>
+					<td><b>@(Bold)</b></td>
+					<td class="monospace">__@(Bold)__</td>
+				</tr>
+				<tr>
+					<td><i>@(Italic)</i></td>
+					<td class="monospace">**@(Italic)**</td>
+				</tr>
+				<tr>
+					<td><s>@(Strike)</s></td>
+					<td class="monospace">~~@(Strike)~~</td>
+				</tr>
+				<tr>
+					<td style="font-size:30px">@(Header (Large))</td>
+					<td class="monospace"># @(Header)</td>
+				</tr>
+				<tr>
+					<td style="font-size:25px">@(Header (Medium))</td>
+					<td class="monospace">## @(Header)</td>
+				</tr>
+				<tr>
+					<td style="font-size:18px">@(Header (Small))</td>
+					<td class="monospace">### @(Header)</td>
+				</tr>
+				<tr>
+					<td><ul style="margin:0;padding:0 0 0 15px"><li>@(List Item)</li></ul></td>
+					<td class="monospace">- @(List Item)</td>
+				</tr>
+				<tr>
+					<td><div style="color:gray;border-left:3px solid #E0E0E0;padding:3px 10px">@(Blockquote)</div></td>
+					<td class="monospace">&gt; @(Blockquote)</td>
+				</tr>
+				<tr>
+					<td><a href="https://www.totaljs.com" target="_blank">@(Link Title)</a></td>
+					<td class="monospace">[@(Link Title)](https://www.totaljs.com)</td>
+				</tr>
+				<tr>
+					<td><i class="fa fa-photo"></i></td>
+					<td class="monospace">![@(Image Title)](https://.../logo.jpg)</td>
+				</tr>
+				<tr>
+					<td><i class="fa fa-video-camera"></i></td>
+					<td class="monospace">
+						<div>```video</div>
+						<div>Link to VIMEO or YOUTUBE</div>
+						<div>```</div>
+					</td>
+				</tr>
+				<tr>
+					<td><code style="background-color:#F0F0F0;padding:2px 5px;border-radius:4px">@(Code)</code></td>
+					<td class="monospace">`code`</td>
+				</tr>
+				<tr>
+					<td>
+						<table class="table table-bordered">
+							<thead>
+								<tr>
+									<td>Table</td>
+									<td>Value</td>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>Table</td>
+									<td>Value</td>
+								</tr>
+							</tbody>
+						</table>
+					</td>
+					<td class="monospace"><pre>|  Table  | Value |
+| ------- | ----- |
+| A       | B     |
+| A       | B     |</pre>
+</td>
+					</td>
+				</tr>
+				<tr>
+					<td class="monospace"><b>alert(</b><span class="green">&#39;@(Your code here)&#39;</span><b>);</b></td>
+					<td class="monospace">
+						<div>```javascript</div>
+						<div>alert(&#39;@(Your code here)&#39;);</div>
+						<div>```</div>
+					</td>
+				</tr>
+				<tr>
+					<td class="monospace" colspan="2">
+						<div>:-)<span class="smiles smiles-1"></span> :-|<span class="smiles smiles-2"></span> ;-)<span class="smiles smiles-8"></span> 8-)<span class="smiles smiles-5"></span> :((<span class="smiles smiles-7"></span> :-(<span class="smiles smiles-3"></span> :-P<span class="smiles smiles-6"></span> :-O<span class="smiles smiles-4"></span> :-*<span class="smiles smiles-9"></span> +1<span class="smiles smiles-10"></span></div>
+					</td>
+				</tr>
+				<tr>
+					<td>@(Keyboard &quot;Up&quot;) <i class="fa fa-long-arrow-up"></i></td>
+					<td>@(Edit latest message.)</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<hr class="nmt nmb" />
+	<div class="padding">
+		<button class="button" name="cancel">@(Close)</button>
+	</div>
+</div>

@@ -1,0 +1,101 @@
+<div class="padding" data-jc="search" data-jc-path="common.search" data-selector=".jsearch" id="userscontainer">
+	<div class="savisible">
+		<div class="row">
+			<div class="col-md-3 col-sm-5 m">
+				<button class="button button-small exec" data-exec="users_new"><i class="fa fa-plus-circle mr5"></i>@(Add a new user)</button>
+			</div>
+			<div class="col-md-3 col-sm-5 m mt10">
+				<div data-jc="checkbox" data-jc-path="users.online">@(Show online users)</div>
+			</div>
+		</div>
+	</div>
+	<div data-jc="lazyload" data-container="#content" data-selector=".jlazyload" data-exec="lazy_picture" data-jc-path="users.items">
+		<div data-jc="repeater-group" data-jc-path="users.items" data-group="department" class="users row">
+			<script type="text/html">
+				<div class="col-lg-2 col-md-4 col-xs-6 m jsearch{{ if picture && picture !== 'face' }} jlazyload{{ fi }}" data-search="{{ name }}">
+					<a href="{{ if me }}javascript:void(0){{ else }}/users/{{ linker }}/{{ fi }}" class="users-name singleline{{ if !me }} jrouting{{ fi }}"><img src="/photos/face.jpg" data-src="{{ if picture }}/photos/{{ picture }}.jpg{{ else }}/img/face.jpg{{ fi }}" class="mr5 img-lazyload" height="20" />{{ name }}</a>
+					<div class="fs11 mt5 singleline b black">{{ position }}</div>
+					<div class="fs11 singleline"><i class="fa fa-circle mr5 useronline{{ if online }} online{{ fi }}" data-id="{{ id }}"></i>{{ status | def('...') }}</div>
+					<div class="fs11 singleline">{{ if mobile }}<i class="fa fa-mobile mr5"></i>{{ fi }}{{ if notifications }}<i class="fa fa-envelope-o mr5"></i>{{ fi }}<i class="fa fa-clock-o mr5"></i>@(Logged:) {{ datelogged | time | def('...') }}{{ if blocked }} <b class="red">@((user is blocked))</b>{{ fi }}</div>
+					<div class="operations"><a href="javascript:void(0)" class="exec" data-exec="users_edit" data-id="{{ id }}">@(Edit)</a><a href="javascript:void(0)" class="exec" data-exec="users_remove" data-id="{{ id }}">@(Remove)</a></div>
+				</div>
+			</script>
+			<script type="text/html">
+				<div class="col-md-12 jsearch" data-search="">
+					<h3>{{ department }}</h3>
+				</div>
+				{{ body | raw }}
+				<div class="jsearch" data-search="">
+					<div class="clearfix"></div>
+					<hr class="nmt" />
+				</div>
+			</script>
+		</div>
+	</div>
+</div>
+
+<script>
+	var users = { online: false };
+
+	function lazy_picture(el) {
+		var img = el.find('img');
+		img.attr('src', img.attr('data-src'));
+	}
+
+	function users_reload() {
+		SET('current.title', '@(Users)');
+		SET('current.descripriton', '@(All registered users)');
+		$('#messagebox').addClass('hidden');
+		EMIT('resize');
+		users_refresh();
+		SET('common.stats', null);
+	}
+
+	WATCH('current.users', users_refresh);
+	WATCH('users.online', users_refresh);
+
+	function users_edit(el) {
+		SETTER('loading', 'show');
+		AJAX('GET /api/users/{0}/'.format(el.attr('data-id')), function(response) {
+
+			SETTER('loading', 'hide', 1000);
+
+			if (response instanceof Array)
+				return;
+
+			response.password = '**********';
+			if (response.channels)
+				response.channels = Object.keys(response.channels);
+			else
+				response.channels = [];
+
+			SET('formuser', response);
+			RESET('formuser.*', true);
+			SET('common.form', 'formuser');
+		});
+	}
+
+	function users_refresh() {
+		var items = [];
+
+		current.users.forEach(function(item) {
+			if (users.online && !item.online)
+				return;
+			items.push(item);
+		});
+
+		SET('users.items', items);
+	}
+
+	function users_remove(el) {
+		FIND('confirm').confirm('@(Are you sure you want to remove this user?)', ['@(Yes)', '@(Cancel)'], function(index) {
+			!index && AJAX('DELETE /api/users/{0}/'.format(el.attr('data-id')), NOOP);
+		});
+	}
+
+	function users_new() {
+		SET('formuser', { channels: [], email: '@', picture: 'face', notifications: true }, true);
+		SET('common.form', 'formuser');
+	}
+
+</script>

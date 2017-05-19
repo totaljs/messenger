@@ -1,0 +1,91 @@
+<div class="padding">
+	<nav data-jc="template" data-jc-path="tasks.unread">
+		<script type="text/html">
+			{{ if count }}
+				<div class="unreadmessages row">
+				{{ foreach m in items }}
+					<div class="col-lg-3 col-md-4 col-xs-6 m"><a href="{{ m.url }}" class="jrouting"><span class="count">{{ m.count }}</span>{{ if m.user }}<img src="/photos/{{ m.picture }}.jpg" alt="{{ m.name }}" border="0" />{{ else }}<i class="fa fa-envelope"></i>{{ fi }}<span>{{ m.name}}</span></a></div>
+				{{ end }}
+				</div>
+			{{ fi }}
+		</script>
+	</nav>
+	<div class="fs12"><i class="fa fa-check-circle green mr5"></i>@(Add a private task:)</div>
+	<div data-jc="textbox" data-jc-keypress="false" data-jc-path="tasks.form.body" data-placeholder="@(Type a task description and press enter)" data-maxlength="200" data-control-icon="fa-keyboard-o" class="mt5"></div>
+</div>
+<div data-jc="repeater" data-jc-path="tasks.items">
+	<script type="text/html">
+		<div class="task">
+			<div class="task-checkbox exec" data-id="{{ id }}" data-exec="tasks_checked"><i class="fa fa-check"></i></div>
+			<div class="task-body">{{ body | body }}</div>
+		</div>
+	</script>
+</div>
+<div data-b="tasks.items" data-b-visible="n => !n || !n.length">
+	<br /><br />
+	<div class="center">
+		<i class="fa fa-check-circle green fa-5x"></i>
+		<div class="mt10">@(<b>Great.</b> You don't have any tasks.)</div>
+	</div>
+</div>
+
+<script>
+
+	var tasks = {};
+	tasks.form = {};
+
+	WATCH('tasks.form.body', function(path, value) {
+		if (value) {
+			AJAX('POST /api/tasks/', { body: value }, function(response) {
+				response.success && PUSH('tasks.items', { body: value, id: response.value });
+			});
+			SET('tasks.form.body', '');
+		}
+	});
+
+	function tasks_reload() {
+		SET('current.title', '@(My Tasks:)' + ' ' + user.name);
+		SET('current.description', '@(Private to-do tasks)');
+		$('#messagebox').addClass('hidden');
+		EMIT('resize');
+		AJAX('GET /api/tasks/', 'tasks.items');
+
+		WAIT(function() {
+			return current.users !== EMPTYARRAY;
+		}, tasks_refreshunread);
+
+		SET('common.stats', null);
+	}
+
+	ON('unread', tasks_refreshunread);
+
+	function tasks_refreshunread() {
+		var unread = {};
+		unread.items = [];
+		unread.count = 0;
+
+		Object.keys(user.unread).forEach(function(id) {
+			var count = user.unread[id];
+			var tmp = current.channels.findItem('id', id);
+			if (tmp) {
+				unread.items.push({ url: '/channels/{0}/'.format(tmp.linker), name: tmp.name, count: count });
+				unread.count += count;
+				return;
+			}
+
+			tmp = current.users.findItem('id', id);
+			if (tmp) {
+				unread.items.push({ user: true, url: '/users/{0}/'.format(tmp.linker), name: tmp.name, count: count, picture: tmp.picture, online: tmp.online });
+				unread.count += count;
+			}
+		});
+		SET('tasks.unread', unread);
+	}
+
+	function tasks_checked(el) {
+		el.removeClass('exec').addClass('task-checked').parent().addClass('task-removed');
+		tasks.items = tasks.items.remove('id', el.attr('data-id'));
+		AJAX('GET /api/tasks/{0}/'.format(el.attr('data-id')), NOOP);
+	}
+
+</script>

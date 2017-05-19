@@ -1,0 +1,49 @@
+<div data-jc="form" data-title="@(List of all uploaded files)" data-jc-path="common.form" data-if="value === 'files'" data-width="700px" class="hidden">
+	<div class="padding">
+		<div data-jc="repeater" data-jc-path="files.items" class="files">
+			<script type="text/html">
+				<div class="file">
+					<div class="file-user">
+						<img src="/photos/{{ user.picture }}.jpg" width="34" alt="{{ user.name }}" border="0" />
+						<div><i class="fa fa-circle mr5 useronline{{ if user.online }} online{{ fi }}" data-id="{{ id }}"></i><span{{ if user.me }} class="b red"{{ fi }}>{{ user.name }}</span><div class="fs11" title="{{ datecreated | format('@(yyyy-MM-mm HH:mm)') }}">{{ datecreated | time }}</div></div>
+					</div>
+					<div class="file-body">
+						<div class="b fs11 black"><i class="fa fa-envelope-o mr5"></i>@(Message:)</div>
+						<div class="markdown mt10">{{ body | markdown }}</div>
+					</div>
+					<ul>
+					{{ foreach m in files }}
+						<li class="singleline"><a href="{{ m.url }}" target="_blank"><i class="fa fa-cloud-download"></i>{{ m.name }}</a></li>
+					{{ end }}
+					</ul>
+				</div>
+			</script>
+		</div>
+		<div data-b="files.items" data-b-visible="n => !n || !n.length">
+			<br />
+			<div class="center padding">
+				<i class="fa fa-folder-o green fa-5x"></i>
+				<div class="mt10"><b>@(No files in database.)</b><br />@(This conversation doesn't contain any uploaded files.)</div>
+			</div>
+			<br /><br />
+		</div>
+		<button class="button" name="cancel">@(Close)</button>
+	</div>
+</div>
+
+<script>
+	var FILESFILTER = { max: 50 };
+	var files = {};
+
+	function files_reload() {
+		SETTER('loading', 'show');
+		AJAX('GET /api/files/{0}/'.format((MSG_ROUTE.type === 'channel' ? 'channel' : 'user') + MSG_ROUTE.id), FILESFILTER, function(response) {
+			response.forEach(function(item) {
+				item.user = current.users.findItem('id', item.iduser);
+			});
+			SET('files.items', response);
+			SETTER('loading', 'hide', 1000);
+			highlight($('.files'));
+		});
+	}
+</script>

@@ -1,0 +1,107 @@
+<div data-jc="form" data-title="@(Edit user)" data-jc-path="common.form" data-if="value === 'formuser'" data-width="700px" data-jc-id="formuser" class="hidden">
+	<div class="padding">
+
+		<div class="row">
+			<div class="col-md-4 center">
+				<div data-jc="pictureupload" data-jc-path="formuser.picture" data-width="200" data-height="200" data-url="/api/upload/photo/" class="auto center" data-path="/photos/{0}.jpg"></div>
+				<p class="fs11 silver">@(Drag & Drop photo or click on<br />the picture above.)</p>
+			</div>
+			<div class="col-md-8 bl">
+				<br />
+				<div class="row">
+					<div class="col-md-6 m">
+						<div data-jc="textbox" data-jc-path="formuser.name" data-required="true" data-maxlength="40" data-placeholder="@(e.g. Peter Sirka)">@(User name)</div>
+					</div>
+					<div class="col-md-6 m">
+						<div data-jc="textbox" data-jc-path="formuser.email" data-required="true" data-maxlength="120" data-jc-type="email">@(E-mail address)</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-md-6 m">
+						<div data-jc="textbox" data-jc-path="formuser.department" data-required="true" data-placeholder="@(e.g. Developers)">@(Department)</div>
+					</div>
+					<div class="col-md-6 m">
+						<div data-jc="dropdown" data-jc-path="formuser.department" data-source="formuserdepartments" data-empty="">@(Department)</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-md-6 m">
+						<div data-jc="textbox" data-jc-path="formuser.position" data-required="true" data-placeholder="@(e.g. Developer)">@(Position)</div>
+					</div>
+					<div class="col-md-6 m">
+						<div data-jc="dropdown" data-jc-path="formuser.position" data-source="formuserpositions" data-empty="">@(Position)</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-md-6 m">
+						<div data-jc="textbox" data-jc-path="formuser.status" data-maxlength="50" data-placeholder="@(e.g. At work)">@(Status)</div>
+					</div>
+					<div class="col-md-6 m">
+						<div data-jc="textbox" data-jc-path="formuser.password" data-required="true" data-maxlength="30">@(Password)</div>
+						<div class="mt5 fs11"><a href="javascript:void(0)" data-exec="formuser_password" class="exec">@(Generate password)</a></div>
+					</div>
+				</div>
+				<hr class="nmt" />
+				<div class="m" data-jc="dropdowncheckbox" data-jc-path="formuser.channels" data-source="current.channels" data-placeholder="@(All channels)">@(Channels)</div>
+				<div class="m">
+					<div data-jc="checkbox" data-jc-path="formuser.blocked">@(User is blocked)</div>
+					<div data-jc="checkbox" data-jc-path="formuser.notifications">@(Enable e-mail notifications)</div>
+					<div class="b" data-jc="checkbox" data-jc-path="formuser.sa">@(User is administrator)</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+	<hr class="nmt nmb" />
+	<div class="padding">
+		<div data-jc="error" data-jc-path="formuser.response"></div>
+		<div data-jc="validation" data-jc-path="formuser">
+			<button class="button exec" data-exec="formuser_save" disabled="disabled">@(SUBMIT)</button>
+		</div>
+	</div>
+</div>
+
+<script>
+	function formuser_reload() {
+		var position = {};
+		var department = {};
+
+		current.users.forEach(function(item) {
+			if (item.position)
+				position[item.position] = true;
+			if (item.department)
+				department[item.department] = true;
+		});
+
+		SET('formuserpositions', Object.keys(position));
+		SET('formuserdepartments', Object.keys(department));
+	}
+
+	function formuser_password() {
+		SET('formuser.password', GUID(10));
+	}
+
+	function formuser_save() {
+		if (BLOCKED('formuser', 2000) || !jC.valid('formuser.*'))
+			return;
+		RESET('formuser.*');
+
+		if (formuser.channels.length) {
+			var tmp = {};
+			formuser.channels.forEach(function(item) {
+				tmp[item] = true;
+			});
+			formuser.channels = tmp;
+		} else
+			formuser.channels = null;
+
+		AJAX('POST /api/users/', formuser, function() {
+			SETTER('message', 'success', '@(The user profile has been saved successfully.)');
+			SET('common.form', '');
+		});
+	}
+
+</script>

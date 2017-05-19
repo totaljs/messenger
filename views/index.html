@@ -1,0 +1,673 @@
+@{layout('')}
+@{title(user.name)}
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=10" />
+	<meta name="format-detection" content="telephone=no" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<meta name="robots" content="all,follow" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-title" content="@{config.name}" />
+	<link rel="apple-touch-icon" href="/icon.png" />
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+	<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,200,700&subset=latin,latin-ext" />
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.20.2/codemirror.min.css" />
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/styles/github.min.css" />
+	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.20.2/codemirror.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.20.2/mode/markdown/markdown.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/highlight.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/marked/0.3.6/marked.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/favico.js/0.3.10/favico.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
+	@{import('meta', 'default.css', 'default.js', 'favicon.ico', 'head')}
+</head>
+<body data-jc="exec,binder"@{if user.sa} class="sa"@{fi}>
+
+	<div data-jc="loading"></div>
+	<div data-jc="confirm"></div>
+	<div data-jc="message" data-button="@(Close)"></div>
+	<div data-jc="websocket" data-jc-id="websocket" data-url="/"></div>
+	<div data-jc="audio" data-jc-path="common.volume"></div>
+	<div data-jc="calendar" data-days="@(SU,MO,TU,WE,TH,FR,SO)" data-months="@(January,February,March,April,May,June,July,August,September,October,November,December)" data-today="@(Set today)" data-firstday="0"></div>
+	<div data-jc="nativenotifications" data-jc-path="common.notifications"></div>
+	<div data-jc="clipboardimage"></div>
+	<div data-jc="fontawesome" data-search="@(Search icons ...)"></div>
+
+	<section class="panel">
+
+		<div class="user">
+			<div class="user-name singleline"><img src="/photos/@{user.picture}.jpg" height="30" alt="@{user.name}" />@{user.name}</div>
+			<div class="user-stats"><i class="fa fa-circle online mr5" data-b="common.online" data-b-class="n => n ? '+online -offline' : '-online +offline'"></i>@(Online:)<span data-b="current.online" data-b-html="n => n + 1" class="b ml5"></span> / <span data-b="current.users.length" data-b-html="n => Tangular.helpers.pluralize(n, @('# users', '# user', '# users', '# users'))"></span></div>
+			<div class="user-settings">
+				<i class="fa fa-volume-up exec" data-path="common.sounds" data-value="!common.sounds" data-b="common.sounds" data-b-class="n => n ? '+fa-volume-up -off -fa-volume-off' : '-fa-volume-up +off +fa-volume-off'"></i>
+				<i class="fa fa-bell exec" data-path="common.notifications" data-value="!common.notifications" data-b="common.notifications" data-b-class="n => n ? '+fa-bell -off -fa-bell-slash-o' : '-fa-bell +off +fa-bell-slash-o'"></i>
+			</div>
+			<div class="clearfix"></div>
+		</div>
+
+		<div data-jc="searchbox" data-jc-path="panel.search" data-placeholder="@(Search in the panel)"></div>
+		<hr class="nmt nmb" />
+		<div id="panel">
+			<div data-jc="search" data-jc-path="panel.search" data-selector=".jsearch">
+				<div class="caption jsearch" data-search=""><div class="operation exec" data-path="common.form" data-value="'formblacklist'"><i class="fa fa-rss-square"></i></div>@{if user.sa}<div class="operation exec" data-path="common.form" data-value="'formchannel'"><i class="fa fa-plus-square-o"></i></div>@{fi}@(Channels)</div>
+				<nav data-jc="repeater" data-jc-path="current.channels" class="nav-channels">
+					<script type="text/html">
+						{{ if is && visible }}
+						<a href="/channels/{{ linker }}/" class="jrouting jsearch" data-id="{{ id }}" data-search="{{ name }}">@{if user.sa }<span class="operation" data-name="channel"><i class="fa fa-pencil"></i></span>@{fi}<i class="fa fa-hashtag"></i>{{ name }}</a>
+						{{ fi }}
+					</script>
+				</nav>
+
+				<div class="caption jsearch" data-search=""><div class="operation" data-name="users"><i class="fa fa-plus-square-o"></i></div>@(Direct messages)</div>
+				<nav data-jc="repeater" data-jc-path="current.recent" class="nav-users">
+					<script type="text/html">
+						{{ if !me }}
+						<a href="/users/{{ linker }}/" class="jrouting jsearch" data-search="{{ name }}" data-id="{{ id }}"><span class="operation" data-name="recent"><i class="fa fa-times"></i></span><i class="fa useronline fa-circle {{ if online }}online{{ fi }}" data-id="{{ id }}"></i>{{ name }}</a>
+						{{ fi }}
+					</script>
+				</nav>
+			</div>
+
+			<hr />
+			<nav>
+				<a href="/" class="jrouting"><i class="fa fa-check-circle"></i>@(My Tasks)</a>
+				<a href="/favorite/" class="jrouting"><i class="fa fa-heart"></i>@(Favorites)</a>
+				<a href="/users/" class="jrouting"><i class="fa fa-users"></i>@(Users)</a>
+				<a href="/settings/" class="jrouting"><i class="fa fa-cog"></i>@(Settings)</a>
+				<a href="/logoff/"><i class="fa fa-power-off"></i>@(Sign out)</a>
+			</nav>
+			<br />
+		</div>
+	</section>
+
+	<section class="body">
+		<header id="header">
+			<a href="javascript:void(0)" class="mainmenu visible-xs exec" data-exec="mainmenu_toggle"><i class="fa fa-navicon"></i></a>
+			<div class="row">
+				<div class="col-md-4">
+					<h2 data-b="current.title" data-b-html="n => n" class="singleline">...</h2>
+					<p data-b="current.description" data-b-html="n => n" class="singleline">...</p>
+				</div>
+				<div class="col-lg-4 visible-lg">
+					<div data-jc="nosqlcounter" data-jc-path="common.stats"></div>
+				</div>
+				<div class="col-lg-4 col-md-5 col-lg-offset-0 col-md-offset-3 hidden m" data-b="common.page" data-b-visible="n => n === 'chat' || n === 'users'">
+					<div class="header-button header-button-mute" data-b="common.page" data-b-class="n => n === 'chat' ? '-header-button-disabled' : '+header-button-disabled'"><a href="javascript:void(0)" class="exec" data-exec="chat_mute" title="@(Mute for 1 hour)"><i class="fa"></i></a></div>
+					<div class="header-button" data-b="common.page" data-b-class="n => n === 'chat' ? '-header-button-disabled' : '+header-button-disabled'"><a href="javascript:void(0)" class="exec" data-exec="chat_files" title="@(Files)"><i class="fa fa-copy"></i></a></div>
+					<div data-jc="searchbox" data-jc-path="common.search" data-enter="true" data-placeholder="@(Type a phrase and press enter)"></div>
+				</div>
+			</div>
+		</header>
+		<div id="content">
+			<div data-jc="page" data-jc-path="common.page" data-if="tasks" data-template="/templates/tasks.html" data-reload="tasks_reload"></div>
+			<div data-jc="page" data-jc-path="common.page" data-if="favorite" data-template="/templates/favorite.html" data-reload="favorites_reload"></div>
+			<div data-jc="page" data-jc-path="common.page" data-if="chat" data-template="/templates/chat.html" data-reload="chat_reload"></div>
+			<div data-jc="page" data-jc-path="common.page" data-if="users" data-template="/templates/users.html" data-reload="users_reload"></div>
+			<div data-jc="page" data-jc-path="common.page" data-if="settings" data-template="/templates/settings.html" data-reload="settings_reload"></div>
+			@{components('messenger')}
+		</div>
+		<div id="messagebox">
+			<div data-jc="codemirror" data-jc-path="messages.message" data-type="markdown" data-height="100%" data-placeholder="@(Type a message or drop file.)" data-maxlength="1200"></div>
+			<div id="status">
+				<div class="visible-md visible-lg codemirrorhelp">__<b>@(bold)</b>__ *<i>@(italic)</i>* ~~<s>@(strike)</s>~~ <code>`@(highlight)`</code> &gt; @(quote)</div>
+				<div class="border exec b blue" data-exec="codemirror_icons"><i class="fa fa-smile-o"></i></div>
+				<div class="border exec" data-exec="codemirror_help" title="@(Help)"><i class="fa fa-question-circle-o"></i></div>
+				<div class="border exec" data-exec="codemirror_thumbsup" title="@(Thumbs Up!)"><i class="fa fa-thumbs-up"></i></div>
+				<div class="border exec" data-exec="codemirror_upload" title="@(Upload)"><i class="fa fa-folder-o"></i></div>
+				<div class="border exec" data-exec="chat_export" title="@(Export)"><i class="fa fa-print"></i></div>
+				<div class="border black exec" data-exec="codemirror_enter"><i class="fa fa-keyboard-o mr5"></i><span data-b="common.enter" data-b-html="n => n ? '@(Enter)' : '@(CTRL+Enter)'"></span></div>
+				<div data-jc="typing">
+					<script type="text/html">
+						<div data-id="{{ id }}"><img src="/photos/{{ picture }}.jpg" height="18" alt="{{ name }}" /><b>{{ name }}</b> @(is typing.)</div>
+					</script>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<div data-jc="importer" data-jc-path="common.form" data-if="value === 'formuser'" data-url="/forms/formuser.html" data-reload="formuser_reload"></div>
+	<div data-jc="importer" data-jc-path="common.form" data-if="value === 'formchannel'" data-url="/forms/formchannel.html" data-reload="formchannel_reload"></div>
+	<div data-jc="importer" data-jc-path="common.form" data-if="value === 'searchresults'" data-url="/forms/searchresults.html" data-reload="searchresults_reload"></div>
+	<div data-jc="importer" data-jc-path="common.form" data-if="value === 'help'" data-url="/forms/help.html"></div>
+	<div data-jc="importer" data-jc-path="common.form" data-if="value === 'files'" data-url="/forms/files.html" data-reload="files_reload"></div>
+	<div data-jc="importer" data-jc-path="common.form" data-if="value === 'formblacklist'" data-url="/forms/formblacklist.html" data-reload="formblacklist_reload"></div>
+	<input type="file" id="uploadfile" class="hidden" />
+
+	@{json(user, 'userdata', (k, v) => k !== 'password' ? v : undefined)}
+
+	<script>
+
+		jC.$version = 2;
+
+		MAKE('common', function() {
+			this.enter == null && (this.enter = true);
+			this.sounds == null && (this.sounds = true);
+			this.notifications == null && (this.notifications = true);
+			this.favorites == null && (this.favorites = {});
+			this.volume = 1;
+			this.ticks = Date.now();
+			this.online = false;
+			this.stats = null;
+		});
+
+		// Cache in localStorage
+		CACHEPATH('common.enter', '1 year');
+		CACHEPATH('common.sounds', '1 year');
+		CACHEPATH('common.favorites', '1 year');
+		CACHEPATH('common.notifications', '1 year');
+
+		var MSG_TYPING = { type: 'typing' };
+		var MSG_MESSAGE = { type: 'message' };
+		var MSG_UNREAD = { type: 'unread' };
+		var MSG_RECENT = { type: 'recent' };
+		var MSG_NOCHAT = { type: 'nochat' };
+
+		var messages = { message: '' };
+
+		MAKE('current', function() {
+			this.route = {};
+			this.online = 0;
+			!this.users && (this.users = EMPTYARRAY);
+			!this.channels && (this.channels = EMPTYARRAY);
+			this.ready = false;
+		});
+
+		var user = PARSE($('#userdata').html());
+		var favicon = new Favico({ position : 'up' });
+
+		CACHEPATH('current.users', '1 year');
+		CACHEPATH('current.channels', '1 year');
+
+		NAVIGATION.clientside('.jrouting');
+
+		$(document).on('click', '.userlinker', function(e) {
+			codemirror_adduser(this.getAttribute('data-linker'));
+		});
+
+		$(document).on('click', '.operation', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var el = $(this);
+			var tmp;
+			switch (el.attr('data-name')) {
+				case 'users':
+					REDIRECT('/users/');
+					break;
+				case 'channel':
+					tmp = current.channels.findItem('id', el.parent().attr('data-id'));
+					SET('common.form', 'formchannel');
+					SETTER('loading', 'show');
+					WAIT(function() {
+						return window.formchannel;
+					}, function() {
+						setTimeout(function() {
+							SET('formchannel', CLONE(tmp), true);
+							SETTER('loading', 'hide', 1000);
+						}, 200);
+					});
+					break;
+				case 'recent':
+					tmp = current.users.findItem('id', el.parent().attr('data-id'));
+					if (tmp) {
+						delete user.recent[tmp.id];
+						refresh_recent();
+						MSG_RECENT.id = tmp.id;
+						SETTER('websocket', 'send', MSG_RECENT);
+					}
+				break;
+			}
+		});
+
+		ON('online', function(is) {
+			is && current.ready && current.route && current.route.type && REDIRECT(NAVIGATION.url);
+			SET('common.online', is);
+			current.ready && SETTER('loading', is ? 'hide' : 'show');
+		});
+
+		ON('#websocket', refresh_unread);
+		ON('message', function(response) {
+
+			EMIT('messenger.message', response);
+
+			var tmp, container;
+			switch (response.type) {
+
+				case 'typing':
+					tmp = current.users.findItem('id', response.id);
+					tmp && SETTER('typing', 'insert', tmp);
+					break;
+
+				case 'mute':
+					user.mute = response.body;
+					refresh_mute();
+					break;
+
+				case 'unread':
+					user.unread = response.unread;
+					if (response.recent) {
+						user.recent = response.recent;
+						refresh_recent();
+					}
+					refresh_unread();
+					break;
+
+				case 'cdl':
+
+					tmp = response.users.findItem('id', user.id);
+					tmp.me = true;
+
+					response.channels.forEach(function(item) {
+						item.is = user.channels ? user.channels[item.id] === true : true;
+						item.visible = user.blacklist ? (user.blacklist[item.id] ? false : true) : true;
+					});
+
+					SET('current.channels', response.channels);
+					SET('current.users', response.users);
+					EMIT('location');
+					refresh_recent();
+					refresh_online();
+					refresh_unread();
+					!current.ready && EMIT('messenger.ready');
+					current.ready = true;
+					SETTER('loading', 'hide');
+					break;
+
+				case 'online':
+					$('.useronline[data-id="{0}"]'.format(response.id)).toggleClass('online', response.online);
+					tmp = current.users.findItem('id', response.id);
+					if (tmp) {
+						tmp.online = response.online;
+						tmp.datelogged = response.datelogged;
+					}
+					refresh_online();
+					break;
+
+				case 'message':
+					if (!user.mute || !user.mute[user.id]) {
+						var focus = document.hasFocus();
+						if (!response.edited && !focus && response.iduser !== user.id) {
+							favicon.badge('?');
+							var owner = current.users.findItem('id', response.iduser);
+							SETTER('nativenotifications', 'append', '@(New message from: {0})'.format(owner.name), response.body.substring(0, 80));
+						}
+						response.iduser !== user.id && playsound();
+					}
+					SETTER('chat', response.edited ? 'replace' : 'insert', response, true);
+					break;
+			}
+		});
+
+		$(window).focus(function() {
+			refresh_unread(true);
+		});
+
+		ON('@codemirror', function(component) {
+
+			component.enter = function(type) {
+
+				if ((type && common.enter) || (!type && !common.enter))
+					return CodeMirror.Pass;
+
+				// "chat" is defined in /templates/chat.html
+				if (chat.lastmessage && chat.lastmessage.modified) {
+					MSG_MESSAGE.id = chat.lastmessage.id;
+					chat.lastmessage.modified = false;
+				} else
+					MSG_MESSAGE.id = undefined;
+
+				MSG_MESSAGE.body = component.getValue().trim();
+				MSG_MESSAGE.files = findfiles(MSG_MESSAGE.body);
+				MSG_MESSAGE.users = findusers(MSG_MESSAGE.body);
+				MSG_MESSAGE.users && (MSG_MESSAGE.users[user.id] = true);
+
+				EMIT('messenger.send', MSG_MESSAGE);
+
+				if (MSG_MESSAGE.body) {
+					component.set('');
+					SETTER('websocket', 'send', MSG_MESSAGE);
+				}
+
+				SETTER('fontawesome', 'hide');
+				common.search && SET('common.search', '');
+			};
+
+			component.edit = function(edit) {
+				// "chat" is defined in /templates/chat.html
+				if (!chat.lastmessage || chat.lastmessage.body === ':thumbs-up:')
+					return CodeMirror.pass;
+				if (edit) {
+					component.set(chat.lastmessage.body);
+					chat.lastmessage.modified = true;
+				} else {
+					chat.lastmessage.modified = false;
+					component.set('');
+				}
+			};
+
+			component.typing = function() {
+				current.online && SETTER('websocket', 'send', MSG_TYPING);
+			};
+
+			component.upload = function(editor, e, callback) {
+
+				if (e.preventDefault) {
+					e.preventDefault();
+					e.stopPropagation();
+				}
+
+				SETTER('loading', 'show');
+
+				var data = new FormData();
+				var files = e.dataTransfer ? e.dataTransfer.files : e;
+
+				for (var i = 0, length = files.length; i < length; i++)
+					data.append('file' + i, files[i]);
+
+				UPLOAD('/api/upload/', data, function(data, err) {
+
+					SETTER('loading', 'hide', 100);
+
+					if (err) {
+						err.toString().indexOf('413:') !== -1 && FIND('message').warning('@(The file is too large. The maximum allowed length of file is 3 MB.)');
+						return;
+					}
+
+					if (!data || !data.length)
+						return;
+
+					var push = [];
+
+					for (var i = 0, length = data.length; i < length; i++) {
+						var file = data[i];
+
+						if (file.width && file.height)
+							push.push('![' + file.filename + '](' + file.url + ')');
+						else
+							push.push('[' + file.filename + '](' + file.url + ')');
+					}
+
+					editor.replaceSelection(push.join('\n'));
+					SETTER('fontawesome', 'hide');
+					callback && callback();
+				});
+			};
+		});
+
+		ON('knockknock', function() {
+
+			if ((((Date.now() - common.ticks) / 1000) / 60) > 60) {
+				location.reload(true);
+				return;
+			}
+
+			$('.datetime').each(function() {
+				var el = $(this);
+				el.html(Tangular.helpers.time(el.attr('data-value')));
+			});
+
+			SETTER('websocket', 'send', MSG_UNREAD);
+		});
+
+		ON('404', function() {
+			REDIRECT('/');
+		});
+
+		ROUTE('/', function() {
+			refresh_place();
+			SET('common.page', 'tasks');
+		});
+
+		ROUTE('/favorite/', function() {
+			refresh_place();
+			SET('common.page', 'favorite');
+		});
+
+		ROUTE('/users/', function() {
+			refresh_place();
+			SET('common.search', '');
+			SET('common.page', 'users');
+		});
+
+		ROUTE('/settings/', function() {
+			refresh_place();
+			SET('common.page', 'settings');
+		});
+
+		ROUTE('/channels/{linker}/', function(linker) {
+			WAIT(function() {
+				return current.channels !== EMPTYARRAY;
+			}, function() {
+				var item = current.channels.findItem('linker', linker);
+				if (item) {
+					if (user.channels && !user.channels[item.id])
+						return REDIRECT('/');
+					current.route.type = 'channel';
+					current.route.item = item;
+					MSG_MESSAGE.id = undefined;
+					SET('current.title', '#' + item.name);
+					SET('current.description', item.description);
+					SET('common.search', '');
+					SET('common.page', 'chat');
+					SETTER('codemirror', 'reload');
+					var is = user.unread[item.id];
+					delete user.unread[item.id];
+					refresh_mute();
+					is && refresh_unread();
+				} else
+					REDIRECT('/');
+			});
+		});
+
+		ROUTE('/users/{linker}/', function(linker) {
+			WAIT(function() {
+				return current.users !== EMPTYARRAY;
+			}, function() {
+				var item = current.users.findItem('linker', linker);
+				if (item && item.id !== user.id) {
+					current.route.type = 'user';
+					current.route.item = item;
+					MSG_MESSAGE.id = undefined;
+					SET('current.title', item.name);
+					SET('current.description', item.department + ' / ' + item.position);
+					SET('common.search', '');
+					SET('common.page', 'chat');
+					SETTER('codemirror', 'reload');
+					var is = user.unread[item.id];
+					delete user.unread[item.id];
+					user.recent[item.id] = true;
+					refresh_recent();
+					refresh_mute();
+					is && refresh_unread();
+				} else
+					REDIRECT('/');
+			});
+		});
+
+		// Highlight the current link in the panel
+		ON('location', function() {
+
+			current.ready && isSTANDALONE && CACHE('location', NAVIGATION.url, '5 minutes');
+
+			$('.panel').removeClass('panel-xs');
+			setTimeout2('location', function() {
+				var nav = $('.panel').find('nav');
+				nav.find('.selected').removeClass('selected');
+				nav.find('a[href="{0}"]'.format(NAVIGATION.url)).addClass('selected');
+			}, 50);
+		});
+
+		isSTANDALONE && ON('messenger.ready', function() {
+			var url = CACHE('location');
+			url && url !== NAVIGATION.url && REDIRECT(url);
+		});
+
+		ON('clipboardimage', function(base64) {
+			SETTER('loading', 'show');
+			AJAX('POST /api/upload/base64/', { file: base64 }, function(response, err) {
+				SETTER('loading', 'hide', 500);
+				FIND('codemirror').codemirror().replaceSelection('![@(Screenshot from clipboard)](' + response.url + ')');
+			});
+		});
+
+		function refresh_online() {
+			var count = 0;
+			current.users.forEach(function(item) {
+				item.online && item.id !== user.id && (count++);
+			});
+			current.online !== count && SET('current.online', count);
+		}
+
+		function refresh_mute() {
+			var btn = $('.header-button-mute');
+			var is = false;
+			if (current.route.item)
+				is = user.mute && user.mute[current.route.item.id] ? true : false;
+			btn.toggleClass('header-button-mute-selected', is);
+		}
+
+		function refresh_recent() {
+			var recent = [];
+
+			current.users.forEach(function(item) {
+				user.recent[item.id] && recent.push(item);
+			});
+
+			if (NOTMODIFIED('current.recent', recent))
+				return;
+			SET('current.recent', recent);
+			current.route.type === 'user' && EMIT('location');
+		}
+
+		function refresh_place() {
+			common.page === 'chat' && SETTER('websocket', 'send', MSG_NOCHAT);
+		}
+
+		function playsound() {
+			common.sounds && SETTER('audio', 'play', '/sounds/knockknock.mp3');
+		}
+
+		function refresh_unread(nosound) {
+
+			var keys = Object.keys(user.unread);
+			!nosound && keys.length && playsound();
+
+			var count = 0;
+
+			keys.forEach(function(key) {
+				count += user.unread[key];
+			});
+
+			favicon.badge(count);
+
+			$('#panel').find('.jrouting').each(function() {
+				var el = $(this);
+				var id = el.attr('data-id');
+				id && el.toggleClass('highlight', user.unread[id] ? true : false);
+			});
+
+			count && EMIT('unread');
+		}
+
+		function codemirror_upload() {
+			$('#uploadfile').trigger('click');
+		}
+
+		function codemirror_enter() {
+			SET('common.enter', !common.enter);
+		}
+
+		function codemirror_thumbsup() {
+			if (chat.lastmessage && chat.lastmessage.iduser === user.id && chat.lastmessage.body === ':thumbs-up:' && chat.lastmessage.datecreated.parseDate().add('3 minutes') > new Date())
+				return;
+			MSG_MESSAGE.id = undefined;
+			MSG_MESSAGE.files = null;
+			MSG_MESSAGE.users = null;
+			MSG_MESSAGE.body = ':thumbs-up:';
+			SETTER('websocket', 'send', MSG_MESSAGE);
+		}
+
+		function codemirror_help() {
+			SET('common.form', 'help');
+		}
+
+		function codemirror_icons() {
+			SETTER('fontawesome', 'show', WIDTH() === 'xs' ? 0 : 240, $(window).height() - 400, function(icon) {
+				var editor = FIND('codemirror').codemirror();
+				var str = editor.getSelection() || editor.getValue();
+				var is = str.substring(str.length - 1) === ' ' || str.length === 0;
+				editor.replaceSelection((is ? '' : ' ') + ':' + icon.replace('fa-', '') + ': ');
+				editor.focus();
+			});
+		}
+
+		function codemirror_adduser(linker) {
+			var editor = FIND('codemirror').codemirror();
+			var str = editor.getSelection() || editor.getValue();
+			var l = str.substring(str.length - 1);
+
+			if (l === ' ')
+				l = ' @';
+			else if (l && l !== '@')
+				l = ' @';
+			else if (!l)
+				l = '@';
+			else
+				l = '';
+
+			editor.replaceSelection(l + linker + ' ');
+			editor.focus();
+		}
+
+		function mainmenu_toggle() {
+			$('.panel').toggleClass('panel-xs');
+		}
+
+		$('#uploadfile').on('change', function(e) {
+			var component = FIND('codemirror');
+			var self = this;
+			component.upload(component.codemirror(), self.files, function() {
+				self.value = '';
+			});
+		});
+
+		Tangular.register('time', function(value) {
+
+			if (!value)
+				return;
+
+			var diff = Date.now() - value.parseDate().getTime();
+			var minutes = ((diff / 1000) / 60) >> 0;
+
+			if (minutes < 60) {
+				if (minutes < 3)
+					return '@(now)';
+				return @(minutes + ' minutes ago');
+			}
+
+			var hours = (minutes / 60) >> 0;
+			if (hours < 24)
+				return @(hours + ' ' + Tangular.helpers.pluralize(hours, 'hours', 'hour', 'hours', 'hours') + ' ago');
+
+			var days = (hours / 24) >> 0;
+			if (days < 30)
+				return @(days + ' ' + Tangular.helpers.pluralize(days, 'days', 'day', 'days', 'days') + ' ago');
+
+			var months = (days / 29) >> 0;
+			if (months < 12)
+				return @(months + ' ' + Tangular.helpers.pluralize(months, 'months', 'month', 'months', 'months') + ' ago');
+
+			var years = (months / 12) >> 0;
+			return @(years + ' ' + Tangular.helpers.pluralize(years, 'years', 'year', 'years', 'years') + ' ago');
+		});
+
+		Tangular.register('month', function(value) {
+			return [@('january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december')][value - 1];
+		});
+	</script>
+
+</body>
+</html>
