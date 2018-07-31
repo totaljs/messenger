@@ -44,7 +44,7 @@
 
 	function users_reload() {
 		SET('current.title', '@(Users)');
-		SET('current.descripriton', '@(All registered users)');
+		SET('current.description', '@(All registered users ({0}x))'.format(current.users.length));
 		$('#messagebox').addClass('hidden');
 		EMIT('resize');
 		users_refresh();
@@ -85,6 +85,13 @@
 		});
 
 		SET('users.items', items);
+		SETTER('loading', 'show');
+
+		// Refresh search
+		common.search && setTimeout2('searchusers', function() {
+			$('#userscontainer').component().refresh();
+		}, 100);
+		SETTER('loading', 'hide', 1000);
 	}
 
 	function users_remove(el) {

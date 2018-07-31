@@ -33,7 +33,14 @@ NEWSCHEMA('Message').make(function(schema) {
 		if (!controller.query.max)
 			controller.query.max = 15;
 
-		db.find().sort('datecreated', true).page((controller.query.page || 1) - 1, controller.query.max + count).callback(function(err, response) {
+		var filter = db.find();
+		filter.or();
+		filter.where('dateexpired', undefined);
+		filter.where('dateexpired', '>', F.datetime);
+		filter.end();
+		filter.sort('datecreated', true);
+		filter.page((controller.query.page || 1) - 1, controller.query.max + count);
+		filter.callback(function(err, response) {
 
 			// Sets the first message as read message
 			if (controller.query.page === 1 && id && response.length)

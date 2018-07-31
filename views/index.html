@@ -14,28 +14,29 @@
 	<link rel="apple-touch-icon" href="/icon.png" />
 	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
 	<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,200,700&subset=latin,latin-ext" />
-	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.20.2/codemirror.min.css" />
-	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/styles/github.min.css" />
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.26.0/codemirror.min.css" />
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.11.0/styles/github.min.css" />
 	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-	<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.20.2/codemirror.min.js"></script>
-	<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.20.2/mode/markdown/markdown.min.js"></script>
-	<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/highlight.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.26.0/codemirror.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.26.0/mode/markdown/markdown.min.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.26.0/addon/hint/show-hint.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.11.0/highlight.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/marked/0.3.6/marked.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/favico.js/0.3.10/favico.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
 	@{import('meta', 'default.css', 'default.js', 'favicon.ico', 'head')}
 </head>
-<body data-jc="exec,binder"@{if user.sa} class="sa"@{fi}>
+<body data-jc="exec,binder" class="theme-@{user.theme}@{if user.sa} sa@{fi}">
 
-	<div data-jc="loading"></div>
-	<div data-jc="confirm"></div>
-	<div data-jc="message" data-button="@(Close)"></div>
-	<div data-jc="websocket" data-jc-id="websocket" data-url="/"></div>
 	<div data-jc="audio" data-jc-path="common.volume"></div>
 	<div data-jc="calendar" data-days="@(SU,MO,TU,WE,TH,FR,SO)" data-months="@(January,February,March,April,May,June,July,August,September,October,November,December)" data-today="@(Set today)" data-firstday="0"></div>
-	<div data-jc="nativenotifications" data-jc-path="common.notifications"></div>
 	<div data-jc="clipboardimage"></div>
+	<div data-jc="confirm"></div>
 	<div data-jc="fontawesome" data-search="@(Search icons ...)"></div>
+	<div data-jc="loading" class="ui-loading"></div>
+	<div data-jc="message" data-button="@(Close)"></div>
+	<div data-jc="nativenotifications" data-jc-path="common.notifications"></div>
+	<div data-jc="websocket" data-jc-id="websocket" data-url="/"></div>
 
 	<section class="panel">
 
@@ -111,13 +112,14 @@
 			@{components('messenger')}
 		</div>
 		<div id="messagebox">
-			<div data-jc="codemirror" data-jc-path="messages.message" data-type="markdown" data-height="100%" data-placeholder="@(Type a message or drop file.)" data-maxlength="1200"></div>
+			<div data-jc="codemirror" data-jc-path="messages.message" data-type="markdown" data-height="100%" data-placeholder="@(Type a message in markdown syntax or drop file.)" data-maxlength="1200"></div>
 			<div id="status">
-				<div class="visible-md visible-lg codemirrorhelp">__<b>@(bold)</b>__ *<i>@(italic)</i>* ~~<s>@(strike)</s>~~ <code>`@(highlight)`</code> &gt; @(quote)</div>
 				<div class="border exec b blue" data-exec="codemirror_icons"><i class="fa fa-smile-o"></i></div>
 				<div class="border exec" data-exec="codemirror_help" title="@(Help)"><i class="fa fa-question-circle-o"></i></div>
 				<div class="border exec" data-exec="codemirror_thumbsup" title="@(Thumbs Up!)"><i class="fa fa-thumbs-up"></i></div>
 				<div class="border exec" data-exec="codemirror_upload" title="@(Upload)"><i class="fa fa-folder-o"></i></div>
+				<div class="border exec" data-exec="chat_secret" data-b="chat.secret" data-b-class="value ? '+selected' : '-selected'" title="@(Toggle a secret messaging)"><i class="fa fa-eye"></i></div>
+				<div class="border exec markasunread" data-exec="chat_unread" title="@(Mark as unread)"><i class="fa fa-history"></i></div>
 				<div class="border exec" data-exec="chat_export" title="@(Export)"><i class="fa fa-print"></i></div>
 				<div class="border black exec" data-exec="codemirror_enter"><i class="fa fa-keyboard-o mr5"></i><span data-b="common.enter" data-b-html="n => n ? '@(Enter)' : '@(CTRL+Enter)'"></span></div>
 				<div data-jc="typing">
@@ -135,13 +137,14 @@
 	<div data-jc="importer" data-jc-path="common.form" data-if="value === 'help'" data-url="/forms/help.html"></div>
 	<div data-jc="importer" data-jc-path="common.form" data-if="value === 'files'" data-url="/forms/files.html" data-reload="files_reload"></div>
 	<div data-jc="importer" data-jc-path="common.form" data-if="value === 'formblacklist'" data-url="/forms/formblacklist.html" data-reload="formblacklist_reload"></div>
+
 	<input type="file" id="uploadfile" class="hidden" />
 
 	@{json(user, 'userdata', (k, v) => k !== 'password' ? v : undefined)}
 
 	<script>
 
-		jC.$version = 2;
+		MAIN.$version = 3;
 
 		MAKE('common', function() {
 			this.enter == null && (this.enter = true);
@@ -225,7 +228,10 @@
 		ON('online', function(is) {
 			is && current.ready && current.route && current.route.type && REDIRECT(NAVIGATION.url);
 			SET('common.online', is);
-			current.ready && SETTER('loading', is ? 'hide' : 'show');
+			if (current.ready) {
+				SETTER('loading', is ? 'hide' : 'show');
+				is && setTimeout(NAVIGATION.reload, 1000);
+			}
 		});
 
 		ON('#websocket', refresh_unread);
@@ -314,10 +320,13 @@
 
 				// "chat" is defined in /templates/chat.html
 				if (chat.lastmessage && chat.lastmessage.modified) {
+					MSG_MESSAGE.secret = chat.lastmessage.secret;
 					MSG_MESSAGE.id = chat.lastmessage.id;
 					chat.lastmessage.modified = false;
-				} else
+				} else {
 					MSG_MESSAGE.id = undefined;
+					MSG_MESSAGE.secret = chat.secret;
+				}
 
 				MSG_MESSAGE.body = component.getValue().trim();
 				MSG_MESSAGE.files = findfiles(MSG_MESSAGE.body);
@@ -409,6 +418,11 @@
 				el.html(Tangular.helpers.time(el.attr('data-value')));
 			});
 
+			$('.datexpire').each(function() {
+				var el = $(this);
+				el.html(Tangular.helpers.expiration(el.attr('data-value')));
+			});
+
 			SETTER('websocket', 'send', MSG_UNREAD);
 		});
 
@@ -439,7 +453,7 @@
 
 		ROUTE('/channels/{linker}/', function(linker) {
 			WAIT(function() {
-				return current.channels !== EMPTYARRAY;
+				return current.channels !== EMPTYARRAY && MAIN.loaded;
 			}, function() {
 				var item = current.channels.findItem('linker', linker);
 				if (item) {
@@ -452,6 +466,7 @@
 					SET('current.description', item.description);
 					SET('common.search', '');
 					SET('common.page', 'chat');
+					SET('chat.secret', CACHE('secret.' + current.route.item.id) ? true : false);
 					SETTER('codemirror', 'reload');
 					var is = user.unread[item.id];
 					delete user.unread[item.id];
@@ -464,7 +479,7 @@
 
 		ROUTE('/users/{linker}/', function(linker) {
 			WAIT(function() {
-				return current.users !== EMPTYARRAY;
+				return current.users !== EMPTYARRAY && MAIN.loaded;
 			}, function() {
 				var item = current.users.findItem('linker', linker);
 				if (item && item.id !== user.id) {
@@ -475,6 +490,7 @@
 					SET('current.description', item.department + ' / ' + item.position);
 					SET('common.search', '');
 					SET('common.page', 'chat');
+					SET('chat.secret', CACHE('secret.' + current.route.item.id) ? true : false);
 					SETTER('codemirror', 'reload');
 					var is = user.unread[item.id];
 					delete user.unread[item.id];
@@ -632,6 +648,23 @@
 			component.upload(component.codemirror(), self.files, function() {
 				self.value = '';
 			});
+		});
+
+		Tangular.register('expiration', function(value) {
+			var diff = Date.now() - value.parseDate().getTime();
+			var minutes = Math.abs(((diff / 1000) / 60) >> 0);
+			if (minutes < 60) {
+				if (minutes < 3)
+					return '@(EXPIRED)';
+				return 'in ' + minutes + ' minutes';
+			}
+
+			var hours = (minutes / 60) >> 0;
+			if (hours < 24)
+				return @('in ' + hours + ' ' + Tangular.helpers.pluralize(hours, 'hours', 'hour', 'hours', 'hours'));
+
+			var days = (hours / 24) >> 0;
+			return @('in ' + days + ' ' + Tangular.helpers.pluralize(days, 'days', 'day', 'days', 'days') + ' ago');
 		});
 
 		Tangular.register('time', function(value) {

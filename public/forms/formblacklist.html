@@ -28,7 +28,10 @@
 				var id = el.attr('data-id');
 				var tmp = current.channels.findItem('id', id);
 				tmp.visible = el.hasClass('item-visible');
-				!tmp.visible && blacklist.push(id);
+				if (tmp.visible)
+					return;
+				blacklist.push(id);
+				delete user.unread[id];
 			});
 
 			SETTER('loading', 'show');
@@ -36,6 +39,9 @@
 				UPDATE('current.channels');
 				SET('common.form', '');
 				SETTER('loading', 'hide', 1000);
+				setTimeout(function() {
+					blacklist.length && refresh_unread(true);
+				}, 1000);
 			});
 		};
 	});

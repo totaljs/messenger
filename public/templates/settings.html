@@ -15,6 +15,7 @@
 				<div data-jc="textbox" data-jc-path="settings.name" data-maxlength="30" class="m" data-required="true">@(Your name)</div>
 				<div data-jc="textbox" data-jc-path="settings.status" data-maxlength="30" class="m" data-placeholder="@(e.g. At work)">@(Current status)</div>
 				<div data-jc="textbox" data-jc-path="settings.email" data-maxlength="120" class="m" data-required="true" data-jc-type="email">@(E-mail address)</div>
+				<div data-jc="dropdown" data-jc-path="settings.theme" data-options="@(Dark)|dark;@(Blue)|blue;@(Red)|red;@(Green)|green;@(Pink)|pink;@(Purple)|purple" class="m" data-required="true">@(Theme)</div>
 				<div data-jc="textbox" data-jc-path="settings.password" data-maxlength="30" class="m" data-required="true" data-jc-type="password">@(Password)</div>
 				<div data-jc="checkbox" data-jc-path="settings.notifications">@(Enable e-mail notifications)</div>
 				<br />
@@ -35,16 +36,32 @@
 
 	function settings_reload() {
 		SET('current.title', '@(Settings)');
-		SET('current.descripriton', '@(Change your preferences)');
+		SET('current.description', '@(Change your preferences)');
 		$('#messagebox').addClass('hidden');
 		EMIT('resize');
-		SET('settings', CLONE(user), true);
+		var data = CLONE(user);
+		if (!data.theme)
+			data.theme = 'dark';
+		SET('settings', data, true);
 		SET('settings.password', '**********', 1000);
 		SET('common.stats', null);
 	}
 
+	WATCH('settings.theme', function(path, value, type) {
+		type === 2 && settings_theme(value);
+	});
+
+	function settings_theme(value) {
+		var body = $(document.body);
+		body.attr('class').split(' ').forEach(function(item) {
+			if (item.substring(0, 5) === 'theme')
+				body.removeClass(item);
+		});
+		body.addClass('theme-' + value);
+	}
+
 	function settings_save() {
-		if (BLOCKED('settings', 2000) || !jC.valid('settings.*'))
+		if (BLOCKED('settings', 2000) || !MAIN.valid('settings.*'))
 			return;
 		RESET('settings.*');
 		AJAX('POST /api/account/', settings, 'settings.response');
@@ -53,13 +70,16 @@
 		user.picture !== settings.picture && $('.user-name').find('img').attr('src', '/photos/{0}.jpg'.format(settings.picture));
 		user.picture = settings.picture;
 		user.status = settings.status;
+		user.theme = settings.theme;
 		var tmp = current.users.findItem('id', user.id);
 		if (tmp) {
 			tmp.status = user.status;
 			tmp.name = user.name;
 			tmp.email = user.email;
 			tmp.picture = user.picture;
+			tmp.theme = user.theme;
 		}
+		settings_theme(user.theme);
 	}
 
 </script>

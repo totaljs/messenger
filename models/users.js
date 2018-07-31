@@ -49,6 +49,7 @@ NEWSCHEMA('User').make(function(schema) {
 			tmp.online = false;
 			tmp.linker = model.name.slug();
 			tmp.sa = model.sa;
+			tmp.theme = 'dark';
 			F.global.users.push(tmp);
 		}
 

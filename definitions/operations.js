@@ -23,6 +23,7 @@ NEWOPERATION('users.load', function(error, value, callback) {
 
 			!user.lastmessages && (user.lastmessages = {});
 			!user.blacklist && (user.blacklist = {});
+			!user.theme && (user.theme = 'dark');
 
 			// Cleaner for unhandled assignment
 			delete user.recent[''];
@@ -119,7 +120,7 @@ NEWOPERATION('messages.cleaner', function(error, value, callback) {
 		db.count().callback(function(err, count) {
 			if (count > max) {
 				count = count - max;
-				db.remove().prepare((doc, index) => index < count);
+				db.remove().prepare((doc, index) => index < count || doc.dateexpired < F.datetime);
 			}
 		});
 	}, 30000);
@@ -137,6 +138,8 @@ NEWOPERATION('send', function(error, value, callback) {
 	// value.body = 'MESSAGE in MARKDOWN';
 	// value.users = [Array of ID users]; (OPTIONAL)
 	// value.files = [{ name: String, url: String }]; (OPTIONAL)
+	// value.idto = IDUSER; (OPTIONAL, can rewrite a private database between two users. Only for robots)
+	// value.secret = Boolean;
 
 	SEND_CLIENT.user = F.global.users.findItem('id', value.iduser);
 
@@ -154,6 +157,8 @@ NEWOPERATION('send', function(error, value, callback) {
 	SEND_MESSAGE.body = value.body;
 	SEND_MESSAGE.users = value.users || null;
 	SEND_MESSAGE.files = value.files || null;
+	SEND_MESSAGE.idto = value.idto;
+	SEND_MESSAGE.secret = value.secret;
 
 	F.global.sendmessage(SEND_CLIENT, SEND_MESSAGE);
 	callback(SUCCESS(true));

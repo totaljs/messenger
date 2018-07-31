@@ -1,0 +1,8 @@
+======= 3.0.0
+
+- added secret messages
+- added `unread` channel/user
+- added themes
+- added auto-suggestion for users
+- improve bots
+- updated versions of scripts and styles

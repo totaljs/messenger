@@ -88,6 +88,14 @@ function messages() {
 				client.send(MSG_UNREAD);
 				break;
 
+			case 'setunread':
+				client.user.unread[message.id] = 1;
+				MSG_UNREAD.unread = client.user.unread;
+				MSG_UNREAD.lastmessages = client.user.lastmessages;
+				MSG_UNREAD.recent = undefined;
+				client.send(MSG_UNREAD);
+				break;
+
 			// Changed group (outside of channels and users)
 			case 'nochat':
 				client.threadtype = undefined;
@@ -162,6 +170,11 @@ F.global.sendmessage = function(client, message) {
 	message.mobile = client.req ? client.req.mobile : false;
 	message.robot = client.send ? false : true;
 
+	if (message.secret)
+		message.dateexpired = F.datetime.add('1 day');
+	else
+		message.secret = undefined;
+
 	if (!message.type)
 		message.type = 'message';
 
@@ -190,8 +203,14 @@ F.global.sendmessage = function(client, message) {
 				return true;
 			}
 
+			// ROBOT
+			if (!client.send && n.threadtype === 'user' && ((n.user.id === message.idto && n.user.threadid === client.threadid) || (n.user.id === client.threadid && n.user.threadid === message.idto))) {
+				is = false;
+				return true;
+			}
+
 			// !client.send (the messages is from "robot")
-			return ((!client.send && n.user.id === client.threadid) || (n.user.id === iduser)) && n.threadid === client.threadid;
+			return n.user.id === iduser && n.threadid === client.threadid;
 		});
 
 		if (is) {
@@ -259,7 +278,8 @@ F.global.sendmessage = function(client, message) {
 	}
 
 	// Saves message into the DB
-	var dbname = client.threadtype === 'channel' ? client.threadtype + client.threadid : 'user' + F.global.merge(client.threadid, iduser);
+	var dbname = client.threadtype === 'channel' ? client.threadtype + client.threadid : 'user' + F.global.merge(client.threadid, message.idto || iduser);
+
 	message.type = undefined;
 	message.idowner = client.threadid;
 	message.search = message.body.keywords(true, true).join(' ');
@@ -271,7 +291,7 @@ F.global.sendmessage = function(client, message) {
 		// Edited
 		tmp = { body: message.body, edited: true, dateupdated: message.datecreated };
 		db.modify(tmp).where('id', id).where('iduser', iduser);
-		dbBackup.modify(tmp).where('id', id).where('iduser', iduser);
+		!message.secret && dbBackup.modify(tmp).where('id', id).where('iduser', iduser);
 	} else {
 
 		// New
@@ -282,7 +302,7 @@ F.global.sendmessage = function(client, message) {
 
 		db.insert(message);
 		db.counter.hit('all').hit(client.user.id);
-		dbBackup.insert(message);
+		!message.secret && dbBackup.insert(message);
 		message.files && message.files.length && NOSQL(dbname + '-files').insert(message);
 		OPERATION('messages.cleaner', dbname, NOOP);
 	}

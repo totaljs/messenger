@@ -1,7 +1,7 @@
 {
-  "name": "messenger",
+  "name": "Messenger",
   "description": "Total.js Messenger is a small alternative to Slack.",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "main": "release.js",
   "dependencies": {
     "total.js": "latest"

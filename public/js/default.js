@@ -77,7 +77,7 @@ Tangular.register('markdown', function(value) {
 	xss.body = MARKDOWN.html;
 	MARKDOWN.html = marked_xss_inject(xss, this.user.sa);
 
-	WORKFLOW('messenger.render')(MARKDOWN);
+	EMIT('messenger.render', MARKDOWN);
 	return MARKDOWN.html;
 });
 
@@ -281,4 +281,40 @@ function marked_iframe(selector) {
 	});
 }
 
+// CodeMirror Autosuggest
+// https://github.com/samdark/codemirror-autosuggest
+
+(function (mod) {
+	mod(CodeMirror);
+})(function (CodeMirror) {
+	'use strict';
+	CodeMirror.defineOption('autoSuggest', [], function (cm, value) {
+		cm.on('inputRead', function (cm, change) {
+			var mode = cm.getModeAt(cm.getCursor());
+			for (var i = 0, len = value.length; i < len; i++) {
+				if (mode.name === value[i].mode && change.text[0] === value[i].startChar) {
+					(function(i) {
+						cm.showHint({
+							completeSingle: false,
+							hint: function (cm) {
+								var cur = cm.getCursor();
+								var token = cm.getTokenAt(cur);
+								var start = token.start + 1;
+								var end = token.end;
+								return {
+									list: value[i].listCallback(cm.getValue().substring(start, end)),
+									from: CodeMirror.Pos(cur.line, start),
+									to: CodeMirror.Pos(cur.line, end)
+								};
+							}
+						});
+					})(i);
+				}
+			}
+		});
+	});
+});
+
+// CodeMirror PlaceHolder
+// https://codemirror.net/addon/display/placeholder.js
 !function(a){"object"==typeof exports&&"object"==typeof module?a(require("../../lib/codemirror")):"function"==typeof define&&define.amd?define(["../../lib/codemirror"],a):a(CodeMirror)}(function(a){function b(a){a.state.placeholder&&(a.state.placeholder.parentNode.removeChild(a.state.placeholder),a.state.placeholder=null)}function c(a){b(a);var c=a.state.placeholder=document.createElement("pre");c.style.cssText="height: 0; overflow: visible",c.className="CodeMirror-placeholder";var d=a.getOption("placeholder");"string"==typeof d&&(d=document.createTextNode(d)),c.appendChild(d),a.display.lineSpace.insertBefore(c,a.display.lineSpace.firstChild)}function d(a){f(a)&&c(a)}function e(a){var d=a.getWrapperElement(),e=f(a);d.className=d.className.replace(" CodeMirror-empty","")+(e?" CodeMirror-empty":""),e?c(a):b(a)}function f(a){return 1===a.lineCount()&&""===a.getLine(0)}a.defineOption("placeholder","",function(c,f,g){var h=g&&g!=a.Init;if(f&&!h)c.on("blur",d),c.on("change",e),c.on("swapDoc",e),e(c);else if(!f&&h){c.off("blur",d),c.off("change",e),c.off("swapDoc",e),b(c);var i=c.getWrapperElement();i.className=i.className.replace(" CodeMirror-empty","")}f&&!c.hasFocus()&&d(c)})});

@@ -7,10 +7,12 @@
 						<img src="/photos/{{ user.picture }}.jpg" width="34" alt="{{ user.name }}" border="0" />
 						<div><i class="fa fa-circle mr5 useronline{{ if user.online }} online{{ fi }}" data-id="{{ id }}"></i><span{{ if user.me }} class="b red"{{ fi }}>{{ user.name }}</span><div class="fs11" title="{{ datecreated | format('@(yyyy-MM-mm HH:mm)') }}">{{ datecreated | time }}</div></div>
 					</div>
+					<!--
 					<div class="file-body">
 						<div class="b fs11 black"><i class="fa fa-envelope-o mr5"></i>@(Message:)</div>
 						<div class="markdown mt10">{{ body | markdown }}</div>
 					</div>
+					-->
 					<ul>
 					{{ foreach m in files }}
 						<li class="singleline"><a href="{{ m.url }}" target="_blank"><i class="fa fa-cloud-download"></i>{{ m.name }}</a></li>

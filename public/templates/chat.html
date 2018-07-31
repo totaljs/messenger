@@ -41,6 +41,7 @@
 				<div class="chat-body">
 					<div class="chat-user"><i class="fa useronline fa-circle{{ if user.online }} online{{ fi }}" data-id="{{ user.id }}"></i><a href="{{ if user.me }}javascript:void(0){{ else }}/users/{{ user.linker }}/{{ fi }}" class="jrouting"><b>{{ user.name }}</b></a><a href="javascript:void(0)" class="chat-user-linker userlinker" data-linker="{{ user.linker }}">@{{ user.linker }}</a>{{ if mobile }}<span class="fa fa-mobile"></span>{{ fi }}<span class="datetime" title="{{ datecreated | format('@(yyyy-MM-dd HH:mm)') }}" data-value="{{ datecreated }}">{{ datecreated | time }}</span></div>
 					<div class="chat-position">{{ if user.datelogged && !user.online }}<span class="lastonline hidden-xs"><i class="fa fa-clock-o"></i>@(Last logged:) {{ user.datelogged | time }}</span>{{ fi }}{{ if !read }}<span class="datetime unread" data-value="{{ datecreated }}">{{ datecreated | time }}</span>{{ fi }}<b>{{ user.department }}</b> / {{ user.position }}{{ if user.status }}<span class="status"><i class="fa fa-user-circle-o"></i>{{ user.status }}</span>{{ fi }}</div>
+					{{ if secret }}<div class="chat-secret"><span><i class="fa fa-eye"></i> @(Expires) <b class="dateexpire" title="{{ dateexpired | format('@(yyyy-MM-dd HH:mm)') }}" data-value="{{ dateexpired }}">{{ dateexpired | expiration }}</b></span></div>{{ fi }}
 					<div class="markdown">{{ body | markdown }}</div>
 				</div>
 			</figure>
@@ -52,7 +53,7 @@
 				<a href="{{ if user.me }}javascript:void(0){{ else }}/users/{{ user.linker }}/{{ fi }}" class="jrouting"><img src="/photos/{{ user.picture }}.jpg" alt="{{ user.name }}" border="0" /></a>
 				<div>
 					<div class="username"><i class="fa useronline fa-circle{{ if user.online }} online{{ fi }}" data-id="{{ user.id }}"></i><a href="{{ if user.me }}javascript:void(0){{ else }}/users/{{ user.linker }}/{{ fi }}" class="jrouting">{{ user.name }}</a></div>
-					<div class="position" title="{{ user.department}}">{{ user.position }}</div>
+					<div class="position" title="{{ user.department }}">{{ user.position }}</div>
 					<div class="datetime" title="{{ datecreated | format('@(yyyy-MM-dd HH:mm)') }}" data-value="{{ datecreated }}">{{ datecreated | time }}</div>
 				</div>
 			</div>
@@ -73,7 +74,18 @@
 	var MSG_ROUTE = {};
 	var CHATFILTER = { max: WIDTH() === 'xs' ? 15 : 25 };
 	var CHATSEARCH = { max: 35, q: '', page: 1 };
-	var chat = { empty: true, lastmessage: null };
+
+	MAKE('chat', function() {
+		this.empty = true;
+		this.lastmessage = null;
+		this.secret === undefined && (this.secret = false);
+	});
+
+	function chat_secret() {
+		var val = !chat.secret;
+		SET('chat.secret', val);
+		CACHE('secret.' + current.route.item.id, val, '5 minutes');
+	}
 
 	function chat_reload(page) {
 		MSG_ROUTE.type = current.route.type;
@@ -88,6 +100,7 @@
 			var items = response.items;
 
 			SET('common.stats', response.stats);
+			common.history = items;
 
 			// We have to reverse array because all messages are from newest to older
 			items.reverse();
@@ -144,6 +157,7 @@
 
 	COMPONENT('chat', function() {
 
+		var regjc = /data-jc="|data-ja="/g;
 		var self = this;
 		var history = [];
 
@@ -199,10 +213,12 @@
 
 			if (builder.length) {
 				builder.push('<div class="previouspage"><div>{0}</div></div>'.format(self.attr('data-previous').format(CHATFILTER.page)));
-				el = self.element.prepend(builder.join(''));
+				var val = builder.join('');
+				el = self.element.prepend(val);
 				marked_video(el);
 				marked_iframe(el);
 				highlight(el);
+				regjc.test(val) && COMPILE(self.element);
 			}
 
 			el = $('#content');
@@ -218,6 +234,7 @@
 		};
 
 		self.insert_likes = function(arr, builder) {
+			var recompile = false;
 			builder.push('<figure class="chat-likes{0}">'.format(arr.length === 1 ? ' chat-likes-one' : ''));
 			arr.forEach(function(item) {
 				builder.push(Tlike(item));
@@ -228,10 +245,10 @@
 
 		self.insert = function(value, ws) {
 
-			if (!(value instanceof Array))
-				value = [value];
-			else
+			if (value instanceof Array)
 				self.next = value.length >= CHATFILTER.max;
+			else
+				value = [value];
 
 			var builder = [];
 			var last = user.lastmessages[MSG_ROUTE.id];
@@ -279,10 +296,12 @@
 			}
 
 			if (!el) {
-				el = self.append(builder.join(''));
+				var val = builder.join('');
+				el = self.append(val);
 				marked_video(el);
 				marked_iframe(el);
 				highlight(el);
+				regjc.test(val) && COMPILE(self.element);
 			}
 
 			scrollBottom();
@@ -294,10 +313,12 @@
 			item.me = user.id === item.iduser;
 			item.user = current.users.findItem('id', item.iduser);
 			item.me && (chat.lastmessage = item);
-			self.find('[data-id="{0}"]'.format(item.id)).replaceWith(Tmessage(item));
+			var val = Tmessage(item);
+			self.find('[data-id="{0}"]'.format(item.id)).replaceWith(val);
 			highlight(self.element);
 			marked_video(self.element);
 			marked_iframe(self.element);
+			regjc.test(val) && COMPILE(self.element);
 			return self;
 		};
 
@@ -350,6 +371,15 @@
 
 	function chat_mute() {
 		SETTER('websocket', 'send', { type: 'mute' });
+	}
+
+	function chat_unread() {
+		var id = current.route.item.id;
+		!BLOCKED('unread.' + id, 3000) && SETTER('websocket', 'send', { type: 'setunread', id: id });
+		var el = $('.markasunread').addClass('selected');
+		setTimeout(function() {
+			el.removeClass('selected');
+		}, 500);
 	}
 
 	function chat_files() {

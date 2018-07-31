@@ -6,7 +6,7 @@
 
 - Install [__Node.js__ platform](https://www.nodejs.org)
 - Install [__GraphicsMagick__](http://www.graphicsmagick.org)
-- __Messenger__ (v2.0.0) needs latest Total.js from NPM `+v2.6.0`
+- Install latest version of Total.js `$ npm install total.js`
 - __License__: [MIT](license.txt)
 - [__Live chat with professional support__](https://messenger.totaljs.com)
 - [__HelpDesk with professional support__](https://helpdesk.totaljs.com)
@@ -58,6 +58,7 @@ options.iduser = 'ID USER WHICH SENDS MESSAGE';
 options.target = 'channel'; // or "user"
 options.idtarget = 'idchannel' // or "iduser"
 options.body = 'MARKDOWN MESSAGE'; // how to perform like? just send ":thumbs-up:" in body
+options.secret = false; // is the message a secret message?
 
 // OPTIONAL
 options.id = 'ID MESSAGE'; // for editing of an existing message
@@ -84,11 +85,11 @@ ON('messenger.send', function(message) {
 
 });
 
-// You can register unlimited count of workflows with same name
-WORKFLOW('messenger.render', function(message) {
+// You can register event
+ON('messenger.render', function(message) {
     // message.message  - instance of retrieved message
     // message.html     - rendered HTML (can be modified)
-    
+
     // Example:
     message.html = message.html.replace(/\,/g, ' --- ');
 });

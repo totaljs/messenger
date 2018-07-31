@@ -149,7 +149,7 @@ COMPONENT('validation', function() {
 	};
 
 	self.state = function() {
-		var disabled = jC.disabled(path);
+		var disabled = DISABLED(path);
 		if (!disabled && self.evaluate)
 			disabled = !EVALUATE(self.path, self.evaluate);
 		elements.prop({ disabled: disabled });
@@ -474,7 +474,7 @@ COMPONENT('repeater', function() {
 		}
 
 		self.html(builder);
-		recompile && jC.compile();
+		recompile && COMPILE();
 	};
 });
 
@@ -1124,7 +1124,90 @@ COMPONENT('codemirror', function() {
 			return;
 		}
 
-		editor = CodeMirror(container.get(0), { lineNumbers: self.attr('data-linenumbers') === 'true', lineWrapping: true, mode: self.attr('data-type') || 'htmlmixed', indentUnit: 4, placeholder: self.attr('data-placeholder'), extraKeys: { 'Enter': function() { return self.enter(0); }, 'Cmd-Enter': function() { return self.enter(1); }, 'Up': function() { if (editor.getValue()) return CodeMirror.Pass; self.edit(true); }, 'Esc': function() { self.edit(false); return CodeMirror.pass; }, 'Ctrl-Enter': function() { return self.enter(1); }}});
+		var options = {};
+
+		options.autoSuggest = [];
+		options.autoSuggest.push({
+			mode: 'markdown',
+			startChar: '@',
+			listCallback: function(linker) {
+				var reg = /-/g;
+				linker = linker.replace(reg, '');
+				var arr = [];
+				if (current.route.type === 'user') {
+					arr.push({ text: current.route.item.linker, displayText: current.route.item.name });
+				} else {
+					if (common.history && common.history.length) {
+						var has = {};
+						common.history.forEach(function(item) {
+							if (!has[item.user.id] && item.user.id !== user.id && item.user.linker.replace(reg, '').indexOf(linker) !== -1) {
+								has[item.user.id] = true;
+								arr.push({ text: item.user.linker, displayText: item.user.name });
+							}
+						});
+					} else {
+						for (var i = 0, length = current.users.length; i < length; i++) {
+							if (arr.length > 9)
+								break;
+							var item = current.users[i];
+							if (item.id !== user.id && item.linker.replace(reg, '').indexOf(linker) !== -1)
+								arr.push({ text: item.linker, displayText: item.name });
+						}
+					}
+				}
+				arr.length && arr.quicksort('displayText');
+				return arr;
+			}
+		});
+
+		options.lineNumbers = self.attr('data-linenumbers') === 'true';
+		options.lineWrapping = true;
+		options.mode = self.attr('data-type') || 'htmlmixed';
+		options.indentUnit = 4;
+		options.placeholder = self.attr('data-placeholder');
+		options.extraKeys = {};
+
+		options.extraKeys['Enter'] = function() {
+			return self.enter(0);
+		};
+
+		options.extraKeys['Cmd-Enter'] = function() {
+			return self.enter(1);
+		};
+
+		options.extraKeys['Up'] = function() {
+			if (editor.getValue())
+				return CodeMirror.Pass;
+			self.edit(true);
+		};
+		options.extraKeys['Esc'] = function() {
+			self.edit(false);
+			return CodeMirror.pass;
+		};
+
+		options.extraKeys['Ctrl-Enter'] = function() {
+			return self.enter(1);
+		};
+
+		editor = CodeMirror(container.get(0), options);
+/*
+		var linker = /\w/;
+		var pos = -1;
+
+		editor.on('inputRead', function(editor, change) {
+			// console.log(change);
+
+			if (change.text[0] === '@') {
+				pos = change.from.ch + 1;
+				return CodeMirror.Pass;
+			}
+
+			if (pos > change.from.ch)
+				pos = -1;
+
+			console.log(pos, change.from.ch);
+		});
+		*/
 
 		editor.on('dragover', function() {
 			self.element.addClass('ui-codemirror-dragdrop');
@@ -1149,7 +1232,8 @@ COMPONENT('codemirror', function() {
 			}
 		});
 
-		editor.on('keypress', function() {
+		editor.on('keypress', function(e) {
+
 			if (isTyping) {
 				setTimeout2(self.id + 'typing', function() {
 					isTyping = false;
@@ -2222,7 +2306,7 @@ COMPONENT('nosqlcounter', function() {
 	};
 });
 
-jC.parser(function(path, value, type) {
+MAIN.parser(function(path, value, type) {
 
 	if (type === 'date') {
 		if (value instanceof Date)
@@ -2514,7 +2598,7 @@ COMPONENT('lazyload', function() {
 	};
 });
 
-jC.formatter(function(path, value, type) {
+MAIN.formatter(function(path, value, type) {
 
 	if (type === 'date') {
 		if (value instanceof Date)

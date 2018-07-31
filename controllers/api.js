@@ -176,7 +176,10 @@ function json_blacklist() {
 		self.user.blacklist = {};
 		for (var i = 0, length = self.body.length; i < length; i++) {
 			var id = self.body[i];
-			id.isUID() && (self.user.blacklist[id] = true);
+			if (id.isUID()) {
+				self.user.blacklist[id] = true;
+				self.user.unread[id] && (delete self.user.unread[id]);
+			}
 		}
 		OPERATION('users.save', NOOP);
 	}
