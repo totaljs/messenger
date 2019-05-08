@@ -30,7 +30,7 @@ F.onAuthorize = function(req, res, flags, next) {
 F.on('service', function(counter) {
 	if (counter % 5 !== 0)
 		return;
-	var ticks = F.datetime.add('-10 mintes');
+	var ticks = F.datetime.add('-10 minutes');
 	Object.keys(SESSION).forEach(function(key) {
 		if (SESSION[key].ticks < ticks)
 			delete SESSION[key];
